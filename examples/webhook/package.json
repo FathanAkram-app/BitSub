@@ -1,0 +1,16 @@
+{
+  "name": "bitsub-webhook-example",
+  "version": "1.0.0",
+  "description": "BitSub webhook server example",
+  "main": "webhook-server-example.js",
+  "scripts": {
+    "start": "node webhook-server-example.js",
+    "dev": "nodemon webhook-server-example.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}

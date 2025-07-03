@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "canisters": {
+    "internet_identity": {
+      "type": "custom",
+      "candid": "https://github.com/dfinity/internet-identity/releases/latest/download/internet_identity.did",
+      "wasm": "https://github.com/dfinity/internet-identity/releases/latest/download/internet_identity_dev.wasm.gz",
+      "specified_id": "rdmx6-jaaaa-aaaaa-aaadq-cai"
+    },
+    "subscription_manager": {
+      "type": "motoko",
+      "main": "backend/subscription_manager/main.mo"
+    },
+    "wallet_manager": {
+      "type": "motoko", 
+      "main": "backend/wallet_manager/main.mo"
+    },
+    "transaction_log": {
+      "type": "motoko",
+      "main": "backend/transaction_log/main.mo"
+    },
+    "bitcoin_integration": {
+      "type": "motoko",
+      "main": "backend/bitcoin_integration/main.mo"
+    },
+    "bitcoin_testnet": {
+      "type": "motoko",
+      "main": "backend/bitcoin_testnet/main.mo"
+    },
+    "payment_processor": {
+      "type": "motoko",
+      "main": "backend/payment_processor/main.mo"
+    },
+    "bitsub_frontend": {
+      "type": "assets",
+      "source": ["frontend/dist"],
+      "dependencies": ["subscription_manager", "wallet_manager", "transaction_log", "bitcoin_integration", "bitcoin_testnet", "payment_processor"]
+    }
+  },
+  "networks": {
+    "local": {
+      "bind": "127.0.0.1:4943",
+      "type": "ephemeral"
+    },
+    "ic": {
+      "providers": ["https://icp0.io"],
+      "type": "persistent"
+    }
+  },
+  "output_env_file": "frontend/.env",
+  "generate": {
+    "declarations": "frontend/src/declarations"
+  }
+}
