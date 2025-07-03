@@ -1319,6 +1319,87 @@ body {
   }
 }
 
+/* OKX Price Widget */
+.okx-price-widget {
+  background: linear-gradient(135deg, #ff6b00 0%, #ff8c00 100%);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 24px;
+  color: white;
+  box-shadow: 0 4px 12px rgba(255, 107, 0, 0.3);
+}
+
+.price-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.okx-logo {
+  font-weight: bold;
+  font-size: 0.9rem;
+}
+
+.live-indicator {
+  font-size: 0.7rem;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.btc-price {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.price-label {
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+.price-value {
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+.conversion-helper {
+  text-align: center;
+  opacity: 0.8;
+}
+
+.okx-widget.loading {
+  background: rgba(255, 107, 0, 0.1);
+  color: #ff6b00;
+  text-align: center;
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+}
+
+/* USD Value Styles */
+.usd-amount {
+  font-size: 0.8rem;
+  color: #00ff88;
+  margin-top: 2px;
+}
+
+.usd-value {
+  font-size: 0.8rem;
+  color: #00ff88;
+  display: block;
+  margin-top: 4px;
+}
+
+.plan-usd {
+  font-size: 0.8rem;
+  color: #00ff88;
+  margin-top: 4px;
+  font-weight: 500;
+}
+
 /* Payment Processor */
 .payment-processor {
   position: fixed;

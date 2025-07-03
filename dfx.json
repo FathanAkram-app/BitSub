@@ -31,10 +31,14 @@
       "type": "motoko",
       "main": "backend/payment_processor/main.mo"
     },
+    "okx_integration": {
+      "type": "motoko",
+      "main": "backend/okx_integration/main.mo"
+    },
     "bitsub_frontend": {
       "type": "assets",
       "source": ["frontend/dist"],
-      "dependencies": ["subscription_manager", "wallet_manager", "transaction_log", "bitcoin_integration", "bitcoin_testnet", "payment_processor"]
+      "dependencies": ["subscription_manager", "wallet_manager", "transaction_log", "bitcoin_integration", "bitcoin_testnet", "payment_processor", "okx_integration"]
     }
   },
   "networks": {

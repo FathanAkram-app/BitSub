@@ -1,8 +1,21 @@
 import { useState, useEffect } from 'react'
 import { HttpAgent, Actor } from '@dfinity/agent'
+import OKXPriceWidget from './OKXPriceWidget'
 
 const canisterId = 'bd3sg-teaaa-aaaaa-qaaba-cai'
 const host = 'http://localhost:4943'
+
+const okxIdlFactory = ({ IDL }) => {
+  const PriceData = IDL.Record({
+    'symbol' : IDL.Text,
+    'price' : IDL.Float64,
+    'timestamp' : IDL.Int,
+  });
+  const Result = IDL.Variant({ 'ok' : PriceData, 'err' : IDL.Text });
+  return IDL.Service({
+    'getBTCPrice' : IDL.Func([], [Result], []),
+  });
+};
 
 const idlFactory = ({ IDL }) => {
   const TransactionType = IDL.Variant({
@@ -31,6 +44,8 @@ const idlFactory = ({ IDL }) => {
     'totalSubscriptions' : IDL.Nat,
     'monthlyGrowth' : IDL.Float64,
   });
+
+  
   return IDL.Service({
     'getCreatorTransactions' : IDL.Func([IDL.Principal], [IDL.Vec(Transaction)], ['query']),
     'getCreatorStats' : IDL.Func([IDL.Principal], [Stats], ['query']),
@@ -48,6 +63,7 @@ export default function TransactionHistory({ authClient }) {
   const [chartPeriod, setChartPeriod] = useState('monthly')
   const [chartData, setChartData] = useState([])
   const [maxRevenue, setMaxRevenue] = useState(1)
+  const [btcPrice, setBtcPrice] = useState(0)
 
   useEffect(() => {
     loadTransactions()
@@ -139,6 +155,17 @@ export default function TransactionHistory({ authClient }) {
         totalSubscriptions: Number(creatorStats.totalSubscriptions),
         monthlyGrowth: Number(creatorStats.monthlyGrowth)
       })
+      
+      // Get BTC price for USD conversions
+      const okxActor = Actor.createActor(okxIdlFactory, {
+        agent,
+        canisterId: 'a3shf-5eaaa-aaaaa-qaafa-cai',
+      })
+      
+      const priceResult = await okxActor.getBTCPrice()
+      if ('ok' in priceResult) {
+        setBtcPrice(priceResult.ok.price)
+      }
     } catch (error) {
       console.error('Failed to load stats:', error)
       setStats({
@@ -152,6 +179,11 @@ export default function TransactionHistory({ authClient }) {
   const formatAmount = (amount) => {
     return (amount / 100000000).toFixed(8) + ' BTC'
   }
+  
+  const convertSatsToUSD = (sats) => {
+    const btcAmount = sats / 100000000
+    return (btcAmount * btcPrice).toFixed(2)
+  }
 
   const formatDate = (timestamp) => {
     return new Date(timestamp).toLocaleDateString()
@@ -159,11 +191,13 @@ export default function TransactionHistory({ authClient }) {
 
   return (
     <div className="transaction-history">
+      <OKXPriceWidget authClient={authClient} />
+      
       <div className="stats-grid">
         <div className="stat-card">
           <h4>Total Revenue</h4>
           <div className="stat-value">{stats.totalRevenue.toLocaleString()} sats</div>
-          <div className="stat-subtitle">{formatAmount(stats.totalRevenue)}</div>
+          <div className="stat-subtitle">${convertSatsToUSD(stats.totalRevenue)}</div>
         </div>
         <div className="stat-card">
           <h4>Active Subscriptions</h4>
@@ -232,7 +266,12 @@ export default function TransactionHistory({ authClient }) {
               <div className="tx-type">{tx.type}</div>
               <div className="tx-plan">{tx.planTitle}</div>
               <div className="tx-amount">
-                {tx.amount > 0 ? `${tx.amount.toLocaleString()} sats` : '-'}
+                {tx.amount > 0 ? (
+                  <>
+                    <div>{tx.amount.toLocaleString()} sats</div>
+                    <div className="usd-amount">${convertSatsToUSD(tx.amount)}</div>
+                  </>
+                ) : '-'}
               </div>
               <div className={`tx-status status-${tx.status.toLowerCase()}`}>
                 {tx.status}

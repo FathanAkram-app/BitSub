@@ -28,6 +28,14 @@ A decentralized subscription platform built on the Internet Computer, enabling B
 - **Smart Scheduling** - Automatic payment date advancement
 - **Balance Validation** - Only processes payments when funds available
 
+### 🟠 OKX DEX API Integration
+- **Real-time Price Data** - Direct integration with OKX DEX API
+- **API Endpoint** - `GET https://www.okx.com/api/v5/market/ticker?instId=BTC-USDT`
+- **HTTP Outcalls** - Backend canisters make direct API calls to OKX
+- **Live USD Conversions** - All Bitcoin amounts converted using OKX prices
+- **Price Widget** - Live BTC/USDT price display with OKX branding
+- **Automatic Updates** - Price refreshes every 5 seconds
+
 ## 🏗️ Architecture
 
 ```
@@ -157,6 +165,7 @@ https://your-service.com/api/webhooks/bitsub-payment
 - `payment_processor` - asrmz-lmaaa-aaaaa-qaaeq-cai
 - `bitsub_frontend` - bkyz2-fmaaa-aaaaa-qaaaq-cai
 - `internet_identity` - b77ix-eeaaa-aaaaa-qaada-cai
+- `okx_integration` - a3shf-5eaaa-aaaaa-qaafa-cai (OKX DEX API)
 
 ## 📚 Key Components
 

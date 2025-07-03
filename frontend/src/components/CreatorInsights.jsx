@@ -4,6 +4,18 @@ import { HttpAgent, Actor } from '@dfinity/agent'
 const canisterId = 'bd3sg-teaaa-aaaaa-qaaba-cai'
 const host = 'http://localhost:4943'
 
+const okxIdlFactory = ({ IDL }) => {
+  const PriceData = IDL.Record({
+    'symbol' : IDL.Text,
+    'price' : IDL.Float64,
+    'timestamp' : IDL.Int,
+  });
+  const Result = IDL.Variant({ 'ok' : PriceData, 'err' : IDL.Text });
+  return IDL.Service({
+    'getBTCPrice' : IDL.Func([], [Result], []),
+  });
+};
+
 const idlFactory = ({ IDL }) => {
   const PlanInsight = IDL.Record({
     'planId' : IDL.Text,
@@ -32,6 +44,13 @@ export default function CreatorInsights({ authClient }) {
     }
   })
   const [loading, setLoading] = useState(true)
+  const [btcPrice, setBtcPrice] = useState(0)
+  
+  const convertSatsToUSD = (sats) => {
+    if (!btcPrice || sats === 0) return '0.00'
+    const btcAmount = sats / 100000000
+    return (btcAmount * btcPrice).toFixed(2)
+  }
 
   useEffect(() => {
     loadInsights()
@@ -68,6 +87,17 @@ export default function CreatorInsights({ authClient }) {
           growth: Number(stats.monthlyGrowth)
         }
       })
+      
+      // Get BTC price for USD conversions
+      const okxActor = Actor.createActor(okxIdlFactory, {
+        agent,
+        canisterId: 'a3shf-5eaaa-aaaaa-qaafa-cai',
+      })
+      
+      const priceResult = await okxActor.getBTCPrice()
+      if ('ok' in priceResult) {
+        setBtcPrice(priceResult.ok.price)
+      }
     } catch (error) {
       console.error('Failed to load insights:', error)
     } finally {
@@ -92,10 +122,12 @@ export default function CreatorInsights({ authClient }) {
             <div className="current-month">
               <span className="label">This Month</span>
               <span className="value">{insights.revenue.thisMonth.toLocaleString()} sats</span>
+              <span className="usd-value">${convertSatsToUSD(insights.revenue.thisMonth)}</span>
             </div>
             <div className="last-month">
               <span className="label">Last Month</span>
               <span className="value">{insights.revenue.lastMonth.toLocaleString()} sats</span>
+              <span className="usd-value">${convertSatsToUSD(insights.revenue.lastMonth)}</span>
             </div>
             <div className="growth">
               <span className="growth-value">+{insights.revenue.growth}%</span>
@@ -113,6 +145,9 @@ export default function CreatorInsights({ authClient }) {
                   <div className="plan-name">{plan.title}</div>
                   <div className="plan-stats">
                     {plan.subscribers} subscribers • {plan.revenue.toLocaleString()} sats
+                  </div>
+                  <div className="plan-usd">
+                    ${convertSatsToUSD(plan.revenue)}
                   </div>
                 </div>
               </div>
