@@ -1,3 +1,5 @@
+import { Button } from './ui'
+
 export default function Navigation({ dashboardType, onSwitchDashboard, onLogout }) {
   return (
     <nav className="navigation">
@@ -7,15 +9,16 @@ export default function Navigation({ dashboardType, onSwitchDashboard, onLogout 
         </div>
         
         <div className="nav-actions">
-          <button 
+          <Button 
             onClick={() => onSwitchDashboard(dashboardType === 'creator' ? 'subscriber' : 'creator')}
-            className="btn-secondary nav-switch"
+            variant="secondary"
+            className="nav-switch"
           >
             {dashboardType === 'creator' ? '💳 Switch to Subscriber' : '🎨 Switch to Creator'}
-          </button>
-          <button onClick={onLogout} className="btn-secondary">
+          </Button>
+          <Button onClick={onLogout} variant="secondary">
             Logout
-          </button>
+          </Button>
         </div>
       </div>
     </nav>

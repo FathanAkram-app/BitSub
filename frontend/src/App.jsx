@@ -1,12 +1,10 @@
 import { useState, useEffect } from 'react'
 import { AuthClient } from '@dfinity/auth-client'
 import { HttpAgent, Actor } from '@dfinity/agent'
-import Header from './components/Header'
+
+import { LoginPage, DashboardPage, SubscriberPage, SelectorPage } from './pages'
 import Navigation from './components/Navigation'
-import LoginButton from './components/LoginButton'
-import Dashboard from './components/Dashboard'
-import SubscriberDashboard from './components/SubscriberDashboard'
-import DashboardSelector from './components/DashboardSelector'
+import Header from './components/Header'
 import { ENV } from './config/env'
 import './App.css'
 
@@ -61,8 +59,19 @@ function App() {
   const [dashboardType, setDashboardType] = useState(null)
 
   useEffect(() => {
+    // Check URL params first to set dashboard type immediately
+    const urlParams = new URLSearchParams(window.location.search)
+    const subscribeParam = urlParams.get('subscribe')
+    
+    if (subscribeParam) {
+      setDashboardType('subscriber')
+      sessionStorage.setItem('pendingSubscription', subscribeParam)
+    }
+    
     initAuth()
   }, [])
+
+
 
   async function initAuth() {
     const client = await AuthClient.create()
@@ -144,6 +153,13 @@ function App() {
         onSuccess: () => {
           setIsAuthenticated(true)
           loadPlans()
+          
+          // Handle pending subscription after login
+          const pendingSubscription = sessionStorage.getItem('pendingSubscription')
+          if (pendingSubscription) {
+            setDashboardType('subscriber')
+            sessionStorage.removeItem('pendingSubscription')
+          }
         },
         onError: (error) => {
           console.error('Login failed:', error)
@@ -231,24 +247,19 @@ function App() {
 
   const renderDashboard = () => {
     if (!dashboardType) {
-      return <DashboardSelector onSelectDashboard={setDashboardType} />
+      return <SelectorPage onSelectDashboard={setDashboardType} />
     }
     
     if (dashboardType === 'creator') {
       return (
-        <Dashboard 
-          plans={plans}
-          onLogout={logout}
-          onCreatePlan={createPlan}
-          onDeletePlan={deletePlan}
+        <DashboardPage 
           authClient={authClient}
         />
       )
     }
     
     return (
-      <SubscriberDashboard 
-        onLogout={logout}
+      <SubscriberPage 
         authClient={authClient}
       />
     )
@@ -262,7 +273,7 @@ function App() {
           {loading ? (
             <div className="loading">Loading...</div>
           ) : (
-            <LoginButton onLogin={login} />
+            <LoginPage onLogin={login} />
           )}
         </>
       ) : (

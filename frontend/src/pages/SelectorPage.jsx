@@ -1,3 +1,5 @@
+import { Button } from '../components/ui'
+
 export default function DashboardSelector({ onSelectDashboard }) {
   return (
     <div className="dashboard-selector">
@@ -7,10 +9,7 @@ export default function DashboardSelector({ onSelectDashboard }) {
       </div>
       
       <div className="selector-options">
-        <div 
-          className="selector-card creator-card"
-          onClick={() => onSelectDashboard('creator')}
-        >
+        <div className="selector-card creator-card">
           <div className="card-icon">🎨</div>
           <h3>Creator Dashboard</h3>
           <p>Create and manage subscription plans</p>
@@ -20,12 +19,12 @@ export default function DashboardSelector({ onSelectDashboard }) {
             <li>Configure webhooks</li>
             <li>Track subscribers</li>
           </ul>
+          <Button onClick={() => onSelectDashboard('creator')} variant="primary">
+            Create Plans
+          </Button>
         </div>
         
-        <div 
-          className="selector-card subscriber-card"
-          onClick={() => onSelectDashboard('subscriber')}
-        >
+        <div className="selector-card subscriber-card">
           <div className="card-icon">💳</div>
           <h3>Subscriber Dashboard</h3>
           <p>Browse and subscribe to plans</p>
@@ -35,6 +34,9 @@ export default function DashboardSelector({ onSelectDashboard }) {
             <li>Manage subscriptions</li>
             <li>View payment history</li>
           </ul>
+          <Button onClick={() => onSelectDashboard('subscriber')} variant="primary">
+            Subscribe to Plans
+          </Button>
         </div>
       </div>
     </div>

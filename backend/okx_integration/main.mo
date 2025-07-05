@@ -73,7 +73,7 @@ actor OKXIntegration {
             transform = null;
         };
 
-        Cycles.add(20_949_972_000); // TODO: Move to env config
+        Cycles.add(20_949_972_000);
         
         try {
             let ic : actor {

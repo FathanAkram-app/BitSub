@@ -464,7 +464,7 @@ actor SubscriptionManager {
     
     // Check if user has sufficient wallet balance
     private func checkUserBalance(user: Principal, amount: Nat): async Bool {
-        let walletManager = actor("br5f7-7uaaa-aaaaa-qaaca-cai") : actor {
+        let walletManager = actor("asrmz-lmaaa-aaaaa-qaaeq-cai") : actor {
             getBalance: (Principal) -> async Nat64;
         };
         
@@ -478,7 +478,7 @@ actor SubscriptionManager {
     
     // Deduct amount from user wallet
     private func deductFromWallet(user: Principal, amount: Nat): async Bool {
-        let walletManager = actor("br5f7-7uaaa-aaaaa-qaaca-cai") : actor {
+        let walletManager = actor("asrmz-lmaaa-aaaaa-qaaeq-cai") : actor {
             withdraw: (Principal, Nat64) -> async Bool;
         };
         
@@ -561,7 +561,7 @@ actor SubscriptionManager {
         };
         
         // Convert to USD using OKX integration
-        let okxIntegration = actor("a3shf-5eaaa-aaaaa-qaafa-cai") : actor {
+        let okxIntegration = actor("bw4dl-smaaa-aaaaa-qaacq-cai") : actor {
             convertSatsToUSD: (Nat) -> async Result.Result<Float, Text>;
         };
         

@@ -1,0 +1,83 @@
+.shareable-link {
+  margin-top: 16px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.05);
+}
+
+.shareable-link h4 {
+  margin-bottom: 16px;
+  color: #00d4ff;
+  font-size: 1rem;
+}
+
+.link-option {
+  margin-bottom: 16px;
+}
+
+.link-option label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 0.9rem;
+  color: #a0a0a0;
+  font-weight: 500;
+}
+
+.link-input {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.link-input input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  color: white;
+  font-size: 0.85rem;
+  font-family: 'Monaco', monospace;
+}
+
+.link-input input:focus {
+  outline: none;
+  border-color: #00d4ff;
+}
+
+.embed-code {
+  margin-top: 16px;
+}
+
+.embed-code label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 0.9rem;
+  color: #a0a0a0;
+  font-weight: 500;
+}
+
+.embed-code textarea {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  color: white;
+  font-size: 0.8rem;
+  font-family: 'Monaco', monospace;
+  resize: vertical;
+  margin-bottom: 8px;
+}
+
+.embed-code textarea:focus {
+  outline: none;
+  border-color: #00d4ff;
+}
+
+.link-option small {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.8rem;
+  color: #666;
+  font-style: italic;
+}

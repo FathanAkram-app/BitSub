@@ -1,4 +1,7 @@
 import { useState } from 'react'
+import { Button } from './ui/Button'
+import { Modal, ModalContent, ModalActions } from './ui/Modal'
+import { Input, TextArea, Select } from './ui/Form'
 
 export default function CreatePlanModal({ isOpen, onClose, onSubmit }) {
   const [title, setTitle] = useState('')
@@ -19,6 +22,7 @@ export default function CreatePlanModal({ isOpen, onClose, onSubmit }) {
       webhookUrl: webhookUrl || ''
     })
     
+    // Reset form
     setTitle('')
     setDescription('')
     setAmount('')
@@ -27,86 +31,66 @@ export default function CreatePlanModal({ isOpen, onClose, onSubmit }) {
     onClose()
   }
 
-  if (!isOpen) return null
-
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h3>Create New Plan</h3>
-          <button onClick={onClose} className="close-btn">×</button>
-        </div>
-        
+    <Modal isOpen={isOpen} onClose={onClose} title="Create New Plan">
+      <ModalContent>
         <form onSubmit={handleSubmit} className="modal-form">
-          <div className="form-group">
-            <label>Plan Title</label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Enter plan title"
-              required
-            />
-          </div>
+          <Input
+            label="Plan Title"
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Enter plan title"
+            required
+          />
           
-          <div className="form-group">
-            <label>Description</label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Enter plan description"
-              rows="3"
-            />
-          </div>
+          <TextArea
+            label="Description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Enter plan description"
+            rows="3"
+          />
           
-          <div className="form-group">
-            <label>Amount (satoshis)</label>
-            <input
-              type="number"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="Enter amount in satoshis"
-              required
-            />
-          </div>
+          <Input
+            label="Amount (satoshis)"
+            type="number"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            placeholder="Enter amount in satoshis"
+            required
+          />
           
-          <div className="form-group">
-            <label>Billing Interval</label>
-            <select
-              value={interval}
-              onChange={(e) => setInterval(e.target.value)}
-              className="form-select"
-            >
-              <option value="Daily">Daily</option>
-              <option value="Monthly">Monthly</option>
-              <option value="Yearly">Yearly</option>
-            </select>
-          </div>
+          <Select
+            label="Billing Interval"
+            value={interval}
+            onChange={(e) => setInterval(e.target.value)}
+            options={[
+              { value: 'Daily', label: 'Daily' },
+              { value: 'Monthly', label: 'Monthly' },
+              { value: 'Yearly', label: 'Yearly' }
+            ]}
+          />
           
-          <div className="form-group">
-            <label>Webhook URL (Optional)</label>
-            <input
-              type="url"
-              value={webhookUrl}
-              onChange={(e) => setWebhookUrl(e.target.value)}
-              placeholder="https://your-service.com/webhook"
-            />
-            <small className="form-help">
-              Called when subscriber pays with unique account data<br/>
-              Example: https://your-service.com/api/webhooks/payment
-            </small>
-          </div>
+          <Input
+            label="Webhook URL (Optional)"
+            type="url"
+            value={webhookUrl}
+            onChange={(e) => setWebhookUrl(e.target.value)}
+            placeholder="https://your-service.com/webhook"
+            help="Called when subscriber pays with unique account data"
+          />
           
-          <div className="form-actions">
-            <button type="button" onClick={onClose} className="btn-secondary">
+          <ModalActions>
+            <Button type="button" onClick={onClose} variant="secondary">
               Cancel
-            </button>
-            <button type="submit" className="btn-primary">
+            </Button>
+            <Button type="submit" variant="primary">
               Create Plan
-            </button>
-          </div>
+            </Button>
+          </ModalActions>
         </form>
-      </div>
-    </div>
+      </ModalContent>
+    </Modal>
   )
 }

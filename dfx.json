@@ -48,6 +48,10 @@
       "replica": {
         "subnet_type": "system",
         "max_ingress_message_size": 6291456
+      },
+      "bootstrap": {
+        "ip": "127.0.0.1",
+        "port": 4943
       }
     },
     "ic": {
