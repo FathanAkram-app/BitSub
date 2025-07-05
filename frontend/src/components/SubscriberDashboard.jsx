@@ -5,8 +5,22 @@ import SubscriptionManagement from './SubscriptionManagement'
 import WalletBalance from './WalletBalance'
 import SubscriptionAdvancer from './SubscriptionAdvancer'
 
-const canisterId = 'bd3sg-teaaa-aaaaa-qaaba-cai'
-const host = 'http://localhost:4943'
+const okxIdlFactory = ({ IDL }) => {
+  const PriceData = IDL.Record({
+    'symbol' : IDL.Text,
+    'price' : IDL.Float64,
+    'timestamp' : IDL.Int,
+  });
+  const Result = IDL.Variant({ 'ok' : PriceData, 'err' : IDL.Text });
+  return IDL.Service({
+    'getBTCPrice' : IDL.Func([], [Result], []),
+  });
+};
+
+import { ENV } from '../config/env'
+
+const canisterId = ENV.CANISTER_IDS.SUBSCRIPTION_MANAGER
+const host = ENV.HOST
 
 const idlFactory = ({ IDL }) => {
   const PlanInterval = IDL.Variant({ 
@@ -57,6 +71,13 @@ export default function SubscriberDashboard({ onLogout, authClient }) {
   const [managedView, setManagedView] = useState(false)
   const [walletBalance, setWalletBalance] = useState(0)
   const [autoPayingIds, setAutoPayingIds] = useState(new Set())
+  const [btcPrice, setBtcPrice] = useState(0)
+  
+  const convertSatsToUSD = (sats) => {
+    if (!btcPrice || sats === 0) return '0.00'
+    const btcAmount = sats / 100000000
+    return (btcAmount * btcPrice).toFixed(2)
+  }
   
   const isOverdue = (subscription) => {
     const nextPayment = Number(subscription.nextPayment) / 1000000
@@ -127,6 +148,17 @@ export default function SubscriberDashboard({ onLogout, authClient }) {
       
       setSubscriptions(subsWithPlans)
       
+      // Get BTC price for USD conversions
+      const okxActor = Actor.createActor(okxIdlFactory, {
+        agent,
+        canisterId: ENV.CANISTER_IDS.OKX_INTEGRATION,
+      })
+      
+      const priceResult = await okxActor.getBTCPrice()
+      if ('ok' in priceResult) {
+        setBtcPrice(priceResult.ok.price)
+      }
+      
       // Auto-pay overdue subscriptions if wallet has sufficient balance
       subsWithPlans.forEach(sub => {
         if (canAutoPay(sub) && !autoPayingIds.has(sub.subscriptionId)) {
@@ -160,7 +192,7 @@ export default function SubscriberDashboard({ onLogout, authClient }) {
       // Withdraw from wallet
       const walletActor = Actor.createActor(walletIdlFactory, {
         agent,
-        canisterId: 'br5f7-7uaaa-aaaaa-qaaca-cai',
+        canisterId: ENV.CANISTER_IDS.WALLET_MANAGER,
       })
       
       const withdrawResult = await walletActor.withdraw(
@@ -281,6 +313,7 @@ export default function SubscriberDashboard({ onLogout, authClient }) {
       <WalletBalance 
         authClient={authClient}
         onBalanceUpdate={setWalletBalance}
+        btcPrice={btcPrice}
       />
       
       <div className="section">
@@ -317,6 +350,9 @@ export default function SubscriberDashboard({ onLogout, authClient }) {
                 <p>{planDetails.description}</p>
                 <div className="plan-amount">
                   {planDetails.amount.toString()} sats/{getIntervalText(planDetails.interval)}
+                  {btcPrice > 0 && convertSatsToUSD && (
+                    <div className="usd-amount">${convertSatsToUSD(planDetails.amount) || '0.00'}/{getIntervalText(planDetails.interval)}</div>
+                  )}
                 </div>
                 <div className="plan-id">ID: {planDetails.planId}</div>
                 <button 
@@ -362,6 +398,9 @@ export default function SubscriberDashboard({ onLogout, authClient }) {
                   <h4>{sub.planTitle}</h4>
                   <div className="plan-amount">
                     {sub.planAmount.toString()} sats/{getIntervalText(sub.planInterval)}
+                    {btcPrice > 0 && (
+                      <div className="usd-amount">${convertSatsToUSD(sub.planAmount)}/{getIntervalText(sub.planInterval)}</div>
+                    )}
                   </div>
                   <div className="subscription-status">
                     {Object.keys(sub.status)[0]}

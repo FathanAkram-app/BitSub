@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { HttpAgent, Actor } from '@dfinity/agent'
+import { ENV } from '../config/env'
 
-const okxCanisterId = 'a3shf-5eaaa-aaaaa-qaafa-cai'
-const host = 'http://localhost:4943'
+const okxCanisterId = ENV.CANISTER_IDS.OKX_INTEGRATION
+const host = ENV.HOST
 
 const okxIdlFactory = ({ IDL }) => {
   const PriceData = IDL.Record({

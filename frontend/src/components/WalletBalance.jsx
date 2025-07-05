@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { HttpAgent, Actor } from '@dfinity/agent'
+import { ENV } from '../config/env'
 
-const walletCanisterId = 'br5f7-7uaaa-aaaaa-qaaca-cai'
-const host = 'http://localhost:4943'
+const walletCanisterId = ENV.CANISTER_IDS.WALLET_MANAGER
+const host = ENV.HOST
 
 const walletIdlFactory = ({ IDL }) => {
   return IDL.Service({
@@ -12,11 +13,17 @@ const walletIdlFactory = ({ IDL }) => {
   });
 };
 
-export default function WalletBalance({ authClient, onBalanceUpdate }) {
+export default function WalletBalance({ authClient, onBalanceUpdate, btcPrice = 0 }) {
   const [balance, setBalance] = useState(0)
   const [loading, setLoading] = useState(true)
   const [depositAmount, setDepositAmount] = useState('')
   const [showDeposit, setShowDeposit] = useState(false)
+  
+  const convertSatsToUSD = (sats) => {
+    if (!btcPrice || sats === 0) return '0.00'
+    const btcAmount = sats / 100000000
+    return (btcAmount * btcPrice).toFixed(2)
+  }
 
   useEffect(() => {
     loadBalance()
@@ -87,6 +94,9 @@ export default function WalletBalance({ authClient, onBalanceUpdate }) {
         <div className="balance-amount">
           <span className="sats">{balance.toLocaleString()} sats</span>
           <span className="btc">({formatBalance(balance)})</span>
+          {btcPrice > 0 && (
+            <span className="usd">${convertSatsToUSD(balance)}</span>
+          )}
         </div>
       </div>
       

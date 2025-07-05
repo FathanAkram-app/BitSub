@@ -55,7 +55,9 @@ actor OKXIntegration {
     
     // Real OKX DEX API call using HTTP outcalls
     public func getBTCPrice(): async Result.Result<PriceData, Text> {
-        let url = "https://www.okx.com/api/v5/market/ticker?instId=BTC-USDT";
+        let baseUrl = "https://www.okx.com/api/v5";
+        let endpoint = "/market/ticker?instId=BTC-USDT";
+        let url = baseUrl # endpoint;
         
         let request_headers = [
             { name = "User-Agent"; value = "BitSub/1.0" },
@@ -71,7 +73,7 @@ actor OKXIntegration {
             transform = null;
         };
 
-        Cycles.add(20_949_972_000);
+        Cycles.add(20_949_972_000); // TODO: Move to env config
         
         try {
             let ic : actor {

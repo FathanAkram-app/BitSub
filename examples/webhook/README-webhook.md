@@ -24,7 +24,7 @@ When a subscriber pays, BitSub sends this payload:
 ```json
 {
   "subscriptionId": 123,
-  "subscriber": "rdmx6-jaaaa-aaaaa-aaadq-cai",
+  "subscriber": "example",
   "subscriberAccount": "bc1q123456789abcdef",
   "plan": {
     "title": "Premium Plan",

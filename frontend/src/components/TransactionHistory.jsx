@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
 import { HttpAgent, Actor } from '@dfinity/agent'
 import OKXPriceWidget from './OKXPriceWidget'
+import { ENV } from '../config/env'
 
-const canisterId = 'bd3sg-teaaa-aaaaa-qaaba-cai'
-const host = 'http://localhost:4943'
+const canisterId = ENV.CANISTER_IDS.SUBSCRIPTION_MANAGER
+const host = ENV.HOST
 
 const okxIdlFactory = ({ IDL }) => {
   const PriceData = IDL.Record({
@@ -159,7 +160,7 @@ export default function TransactionHistory({ authClient }) {
       // Get BTC price for USD conversions
       const okxActor = Actor.createActor(okxIdlFactory, {
         agent,
-        canisterId: 'a3shf-5eaaa-aaaaa-qaafa-cai',
+        canisterId: ENV.CANISTER_IDS.OKX_INTEGRATION,
       })
       
       const priceResult = await okxActor.getBTCPrice()

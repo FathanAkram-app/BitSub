@@ -7,10 +7,16 @@ import LoginButton from './components/LoginButton'
 import Dashboard from './components/Dashboard'
 import SubscriberDashboard from './components/SubscriberDashboard'
 import DashboardSelector from './components/DashboardSelector'
+import { ENV } from './config/env'
 import './App.css'
 
-const canisterId = 'bd3sg-teaaa-aaaaa-qaaba-cai'
-const host = 'http://localhost:4943'
+const canisterId = ENV.CANISTER_IDS.SUBSCRIPTION_MANAGER
+const host = ENV.HOST
+const isLocal = ENV.DFX_NETWORK === 'local'
+const identityProvider = isLocal 
+  ? `http://${ENV.CANISTER_IDS.INTERNET_IDENTITY}.localhost:4943`
+  : 'https://identity.ic0.app'
+
 
 // Candid interface for subscription_manager
 const idlFactory = ({ IDL }) => {
@@ -131,8 +137,10 @@ function App() {
 
   async function login() {
     try {
+      
       await authClient.login({
-        identityProvider: 'http://b77ix-eeaaa-aaaaa-qaada-cai.localhost:4943',
+        identityProvider,
+        maxTimeToLive: BigInt(7 * 24 * 60 * 60 * 1000 * 1000 * 1000), // 7 days
         onSuccess: () => {
           setIsAuthenticated(true)
           loadPlans()

@@ -2,6 +2,13 @@
 .dfx/
 canister_ids.json
 
+# Environment Variables
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
 # Generated declarations
 frontend/src/declarations/
 
@@ -17,6 +24,14 @@ frontend/.env.local
 frontend/.env.development.local
 frontend/.env.test.local
 frontend/.env.production.local
+
+# Sensitive Configuration
+*.key
+*.pem
+*.p12
+*.pfx
+secrets/
+config/production.json
 
 # IDE
 .vscode/
@@ -38,3 +53,23 @@ yarn.lock
 # Examples (keep source, ignore builds)
 examples/node_modules/
 examples/package-lock.json
+
+# Deployment artifacts
+*.wasm
+*.did
+
+# Backup files
+*.backup
+*.bak
+*.orig
+
+# Temporary files
+.tmp/
+temp/
+*.tmp
+
+# Docker
+.docker/
+docker-compose.override.yml
+
+qd.md

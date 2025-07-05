@@ -1400,6 +1400,14 @@ body {
   font-weight: 500;
 }
 
+.balance-amount .usd {
+  display: block;
+  font-size: 0.9rem;
+  color: #00ff88;
+  margin-top: 4px;
+  font-weight: 500;
+}
+
 /* Payment Processor */
 .payment-processor {
   position: fixed;

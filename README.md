@@ -75,27 +75,19 @@ BitSub-api/
 git clone <repository-url>
 cd BitSub-api
 
-# Start local Internet Computer replica
-dfx start --background
-
-# Deploy canisters
-dfx deploy
-
 # Install frontend dependencies
-cd frontend
-npm install
-npm run build
-cd ..
+cd frontend && npm install && cd ..
 
-# Deploy frontend
-dfx deploy bitsub_frontend
+# auto starts
+./scripts/auto-deploy.sh
+
 ```
 
 ### Access Application
-- **Frontend**: http://127.0.0.1:4943/?canisterId=bkyz2-fmaaa-aaaaa-qaaaq-cai
+- **Frontend**: http://127.0.0.1:4943/?canisterId=be2us-64aaa-aaaaa-qaabq-cai
+- **Authentication**: Uses mainnet Internet Identity
 - **Backend APIs**: Available via Candid interface
 - **Payment Processor**: Runs automatically in background
-- **Wallet Manager**: Handles Bitcoin testnet transactions
 
 ## 📡 Webhook Integration
 
@@ -156,16 +148,16 @@ https://your-service.com/api/webhooks/bitsub-payment
 - `DFX_NETWORK` - Network to deploy to (local/ic)
 - `CANISTER_ID_*` - Canister IDs for different environments
 
-### Canister IDs (Local Development)
-- `subscription_manager` - bd3sg-teaaa-aaaaa-qaaba-cai
-- `wallet_manager` - br5f7-7uaaa-aaaaa-qaaca-cai
-- `transaction_log` - be2us-64aaa-aaaaa-qaabq-cai
-- `bitcoin_integration` - by6od-j4aaa-aaaaa-qaadq-cai
-- `bitcoin_testnet` - avqkn-guaaa-aaaaa-qaaea-cai
-- `payment_processor` - asrmz-lmaaa-aaaaa-qaaeq-cai
-- `bitsub_frontend` - bkyz2-fmaaa-aaaaa-qaaaq-cai
-- `internet_identity` - b77ix-eeaaa-aaaaa-qaada-cai
-- `okx_integration` - a3shf-5eaaa-aaaaa-qaafa-cai (OKX DEX API)
+### Canister IDs (Current Deployment)
+- `subscription_manager` - b77ix-eeaaa-aaaaa-qaada-cai
+- `wallet_manager` - avqkn-guaaa-aaaaa-qaaea-cai
+- `transaction_log` - by6od-j4aaa-aaaaa-qaadq-cai
+- `bitcoin_integration` - bkyz2-fmaaa-aaaaa-qaaaq-cai
+- `bitcoin_testnet` - bd3sg-teaaa-aaaaa-qaaba-cai
+- `payment_processor` - bw4dl-smaaa-aaaaa-qaacq-cai
+- `okx_integration` - br5f7-7uaaa-aaaaa-qaaca-cai
+- `bitsub_frontend` - be2us-64aaa-aaaaa-qaabq-cai
+- `internet_identity` - Uses mainnet (https://identity.ic0.app)
 
 ## 📚 Key Components
 
@@ -195,25 +187,34 @@ https://your-service.com/api/webhooks/bitsub-payment
 ## 🚀 Quick Start
 
 ```bash
+# One-command setup (auto-configures everything)
+./scripts/auto-deploy.sh
+
+# Opens automatically or visit the URL shown in output
+```
+
+### Manual Setup
+```bash
 # Start local replica
 dfx start --background
 
 # Deploy all canisters
 dfx deploy
 
-# Access the application
-open http://127.0.0.1:4943/?canisterId=bkyz2-fmaaa-aaaaa-qaaaq-cai
+# Access BitSub
+open http://127.0.0.1:4943/?canisterId={frontend-canister-id}
 ```
 
 ## 🧪 Testing
 
-1. **Login** with Internet Identity
-2. **Create Plans** as creator (e.g., "Premium Plan", 50000 sats/month)
-3. **Switch to Subscriber** dashboard
-4. **Add Testnet Funds** to wallet (100000+ sats recommended)
-5. **Subscribe** to plans using plan IDs
-6. **View Analytics** - Charts update with real payment data
-7. **Test Automation** - Payment processor handles recurring payments
+1. **Access**: http://127.0.0.1:4943/?canisterId=be2us-64aaa-aaaaa-qaabq-cai
+2. **Login** with Internet Identity (mainnet)
+3. **Choose Dashboard**: Creator or Subscriber
+4. **Create Plans** as creator (e.g., "Premium Plan", 50000 sats/month)
+5. **Add Testnet Funds** to wallet (100000+ sats recommended)
+6. **Subscribe** to plans using plan IDs
+7. **View Analytics** - Charts update with real payment data
+8. **Test Automation** - Payment processor handles recurring payments
 
 ## 🤝 Contributing
 

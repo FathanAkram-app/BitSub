@@ -54,7 +54,6 @@ echo "✅ Development environment ready!"
 echo ""
 echo "🌐 Frontend: http://localhost:3000"
 echo "🔧 DFX Dashboard: http://localhost:4943/_/dashboard"
-echo "🆔 Internet Identity: http://localhost:4943/?canisterId=rdmx6-jaaaa-aaaaa-aaadq-cai"
 echo ""
 echo "Press Ctrl+C to stop all services"
 
