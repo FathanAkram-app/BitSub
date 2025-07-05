@@ -10,6 +10,7 @@ import Nat64 "mo:base/Nat64";
 import Float "mo:base/Float";
 import Buffer "mo:base/Buffer";
 import Iter "mo:base/Iter";
+import Int "mo:base/Int";
 
 actor SubscriptionManager {
     
@@ -178,11 +179,17 @@ actor SubscriptionManager {
                 transactions.put(nextTransactionId, subscriptionTx);
                 nextTransactionId += 1;
                 
-                // Process initial payment if user has wallet balance
-                let hasBalance = await checkUserBalance(msg.caller, plan.amount);
+                // Process initial payment if user has wallet balance (including platform fee)
+                let platformFee = calculatePlatformFee(plan.amount);
+                let totalAmount = plan.amount + platformFee;
+                let hasBalance = await checkUserBalance(msg.caller, totalAmount);
                 if (hasBalance) {
-                    let deducted = await deductFromWallet(msg.caller, plan.amount);
+                    let deducted = await deductFromWallet(msg.caller, totalAmount);
                     if (deducted) {
+                        // Transfer platform fee and creator payment
+                        ignore await transferPlatformFee(platformFee);
+                        ignore await transferToCreator(plan.creator, plan.amount);
+                        
                         // Update subscription with payment
                         let currentTime = Time.now();
                         let paidSubscription = {
@@ -402,6 +409,42 @@ actor SubscriptionManager {
         }
     };
     
+    // Platform fee configuration (2.5%)
+    private let PLATFORM_FEE_RATE: Float = 0.025;
+    private let PLATFORM_WALLET: Principal = Principal.fromText("2vxsx-fae"); // Platform owner
+    
+    // Calculate platform fee
+    private func calculatePlatformFee(amount: Nat): Nat {
+        let fee = Float.fromInt(amount) * PLATFORM_FEE_RATE;
+        Int.abs(Float.toInt(fee))
+    };
+    
+    // Transfer platform fee
+    private func transferPlatformFee(amount: Nat): async Bool {
+        let walletManager = actor("asrmz-lmaaa-aaaaa-qaaeq-cai") : actor {
+            deposit: (Principal, Nat64) -> async Bool;
+        };
+        
+        try {
+            await walletManager.deposit(PLATFORM_WALLET, Nat64.fromNat(amount))
+        } catch (error) {
+            false
+        }
+    };
+    
+    // Transfer payment to creator
+    private func transferToCreator(creator: Principal, amount: Nat): async Bool {
+        let walletManager = actor("asrmz-lmaaa-aaaaa-qaaeq-cai") : actor {
+            deposit: (Principal, Nat64) -> async Bool;
+        };
+        
+        try {
+            await walletManager.deposit(creator, Nat64.fromNat(amount))
+        } catch (error) {
+            false
+        }
+    };
+    
     // Helper Functions
     private func getIntervalNanos(interval: Interval): Int {
         switch (interval) {
@@ -421,12 +464,18 @@ actor SubscriptionManager {
             if (sub.nextPayment <= currentTime and sub.status == #Active) {
                 switch (plans.get(sub.planId)) {
                     case (?plan) {
-                        // Check if user has sufficient wallet balance
-                        let hasBalance = await checkUserBalance(sub.subscriber, plan.amount);
+                        // Check if user has sufficient wallet balance (including platform fee)
+                        let platformFee = calculatePlatformFee(plan.amount);
+                        let totalAmount = plan.amount + platformFee;
+                        let hasBalance = await checkUserBalance(sub.subscriber, totalAmount);
                         if (hasBalance) {
                             // Deduct from wallet
-                            let deducted = await deductFromWallet(sub.subscriber, plan.amount);
+                            let deducted = await deductFromWallet(sub.subscriber, totalAmount);
                             if (deducted) {
+                                // Transfer platform fee and creator payment
+                                ignore await transferPlatformFee(platformFee);
+                                ignore await transferToCreator(plan.creator, plan.amount);
+                                
                                 // Update subscription
                                 let updatedSub = {
                                     sub with 
