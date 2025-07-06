@@ -568,15 +568,32 @@ body {
 
 .plan-card {
   background: rgba(255,255,255,0.03);
-  padding: 24px;
+  padding: 28px;
   border-radius: 16px;
   border: 1px solid rgba(255,255,255,0.08);
   backdrop-filter: blur(10px);
   transition: all 0.2s ease;
-  min-height: 180px;
+  min-height: 200px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+}
+
+.plan-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.plan-card-content {
+  flex: 1;
+}
+
+.plan-card-actions {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255,255,255,0.05);
 }
 
 @media (max-width: 768px) {
@@ -657,20 +674,35 @@ body {
   align-items: center;
   z-index: 1000;
   backdrop-filter: blur(8px);
+  padding: 20px;
 }
 
 .modal {
-  background: rgba(26, 26, 46, 0.95);
+  background: rgba(26, 26, 46, 0.98);
   backdrop-filter: blur(20px);
   border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   padding: 0;
   max-width: 500px;
-  width: 90%;
-  max-height: 90vh;
-  overflow-y: auto;
+  width: 100%;
+  max-height: 80vh;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+  transform: scale(1);
+  animation: modalAppear 0.2s ease-out;
+}
+
+@keyframes modalAppear {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .modal-header {

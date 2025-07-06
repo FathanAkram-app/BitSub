@@ -62,23 +62,27 @@ export default function Dashboard({ authClient }) {
             {plans.length > 0 ? (
               <div className="plans-grid">
                 {plans.map(plan => (
-                  <div key={plan.planId}>
-                    <Card className="plan-card">
-                      <CardContent>
+                  <Card key={plan.planId} className="plan-card">
+                    <CardContent>
+                      <div className="plan-card-header">
                         <h4>{plan.title}</h4>
+                        <ShareableLink planId={plan.planId} planTitle={plan.title} />
+                      </div>
+                      <div className="plan-card-content">
                         <p>{plan.description}</p>
                         <div className="plan-amount">
                           {formatSats(plan.amount)} sats/{getIntervalText(plan.interval)}
                           <div className="usd-amount">${convertSatsToUSD(plan.amount)}</div>
                         </div>
                         <div className="plan-id">ID: {plan.planId}</div>
+                      </div>
+                      <div className="plan-card-actions">
                         <Button onClick={() => handleDeletePlan(plan.planId)} variant="danger" size="small">
                           Delete
                         </Button>
-                      </CardContent>
-                    </Card>
-                    <ShareableLink planId={plan.planId} planTitle={plan.title} />
-                  </div>
+                      </div>
+                    </CardContent>
+                  </Card>
                 ))}
               </div>
             ) : (
