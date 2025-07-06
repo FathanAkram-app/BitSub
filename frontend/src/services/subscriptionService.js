@@ -41,6 +41,7 @@ const idlFactory = ({ IDL }) => {
     'getCreatorStats' : IDL.Func([IDL.Principal], [Stats], ['query']),
     'getCreatorTransactions' : IDL.Func([IDL.Principal], [IDL.Vec(Transaction)], ['query']),
     'getChartData' : IDL.Func([IDL.Principal, IDL.Text], [IDL.Vec(IDL.Tuple(IDL.Text, IDL.Nat))], ['query']),
+    'retryPayment' : IDL.Func([IDL.Nat], [IDL.Bool], []),
   });
 };
 
@@ -135,6 +136,11 @@ export class SubscriptionService {
       label,
       revenue: Number(revenue)
     }))
+  }
+
+  async retryPayment(authClient, subscriptionId) {
+    const actor = await this.getActor(authClient)
+    return actor.retryPayment(subscriptionId)
   }
 }
 

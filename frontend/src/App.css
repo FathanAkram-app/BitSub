@@ -906,6 +906,16 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+.subscription-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.subscription-actions button {
+  flex: 1;
+}
+
 .subscription-status {
   color: #00ff88;
   font-weight: 600;

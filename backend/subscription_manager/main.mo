@@ -654,6 +654,63 @@ actor SubscriptionManager {
         chartData
     };
     
+    // Retry payment for pending subscription
+    public shared(msg) func retryPayment(subscriptionId: Nat): async Bool {
+        switch (subscriptions.get(subscriptionId)) {
+            case null { false };
+            case (?sub) {
+                if (sub.subscriber != msg.caller) {
+                    return false;
+                };
+                
+                switch (plans.get(sub.planId)) {
+                    case null { false };
+                    case (?plan) {
+                        // Check if user has sufficient wallet balance (including platform fee)
+                        let platformFee = calculatePlatformFee(plan.amount);
+                        let totalAmount = plan.amount + platformFee;
+                        let hasBalance = await checkUserBalance(msg.caller, totalAmount);
+                        if (hasBalance) {
+                            // Deduct from wallet
+                            let deducted = await deductFromWallet(msg.caller, totalAmount);
+                            if (deducted) {
+                                // Transfer platform fee and creator payment
+                                ignore await transferPlatformFee(platformFee);
+                                ignore await transferToCreator(plan.creator, plan.amount);
+                                
+                                // Update subscription with payment
+                                let currentTime = Time.now();
+                                let paidSubscription = {
+                                    sub with 
+                                    lastPayment = ?currentTime;
+                                    nextPayment = currentTime + getIntervalNanos(plan.interval);
+                                };
+                                subscriptions.put(subscriptionId, paidSubscription);
+                                
+                                // Log payment transaction
+                                let paymentTx = {
+                                    id = nextTransactionId;
+                                    txType = #Payment;
+                                    subscriptionId = subscriptionId;
+                                    planId = sub.planId;
+                                    subscriber = msg.caller;
+                                    amount = plan.amount;
+                                    status = #Confirmed;
+                                    timestamp = currentTime;
+                                    txHash = ?"manual_retry";
+                                };
+                                transactions.put(nextTransactionId, paymentTx);
+                                nextTransactionId += 1;
+                                
+                                true
+                            } else { false }
+                        } else { false }
+                    };
+                };
+            };
+        }
+    };
+    
     // Force advance subscription to next payment period (for testing)
     public func advanceSubscription(subscriptionId: Nat): async Bool {
         switch (subscriptions.get(subscriptionId)) {

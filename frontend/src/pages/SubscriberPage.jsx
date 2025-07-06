@@ -76,6 +76,20 @@ export default function SubscriberDashboard({ authClient }) {
     return { text: 'Pending', color: '#ffc107' }
   }
 
+  const retryPayment = async (subscriptionId) => {
+    try {
+      const result = await subscriptionService.retryPayment(authClient, subscriptionId)
+      if (result) {
+        refetch()
+      } else {
+        alert('Payment failed: Insufficient funds in wallet')
+      }
+    } catch (error) {
+      console.error('Failed to retry payment:', error)
+      alert('Payment failed: Please check your wallet balance')
+    }
+  }
+
   return (
     <div className="dashboard">
       <Wallet authClient={authClient} />
@@ -124,9 +138,16 @@ export default function SubscriberDashboard({ authClient }) {
                   <div className="next-payment">
                     Next: {formatDate(sub.nextPayment)}
                   </div>
-                  <Button onClick={() => cancelSubscription(sub.subscriptionId)} variant="danger" size="small">
-                    Cancel
-                  </Button>
+                  <div className="subscription-actions">
+                    {getPaymentStatus(sub).text === 'Pending' && (
+                      <Button onClick={() => retryPayment(sub.subscriptionId)} variant="primary" size="small">
+                        Pay Now
+                      </Button>
+                    )}
+                    <Button onClick={() => cancelSubscription(sub.subscriptionId)} variant="danger" size="small">
+                      Cancel
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             ))}
