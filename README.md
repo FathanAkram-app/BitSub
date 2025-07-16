@@ -75,12 +75,8 @@ BitSub-api/
 git clone <repository-url>
 cd BitSub-api
 
-# Install frontend dependencies
-cd frontend && npm install && cd ..
-
-# auto starts
+# One-command setup (installs, deploys, builds everything)
 ./scripts/auto-deploy.sh
-
 ```
 
 ### Access Application
@@ -190,19 +186,8 @@ https://your-service.com/api/webhooks/bitsub-payment
 # One-command setup (auto-configures everything)
 ./scripts/auto-deploy.sh
 
-# Opens automatically or visit the URL shown in output
-```
-
-### Manual Setup
-```bash
-# Start local replica
-dfx start --background
-
-# Deploy all canisters
-dfx deploy
-
-# Access BitSub
-open http://127.0.0.1:4943/?canisterId={frontend-canister-id}
+# Opens automatically or visit:
+# http://127.0.0.1:4943/?canisterId=be2us-64aaa-aaaaa-qaabq-cai
 ```
 
 ## 🧪 Testing

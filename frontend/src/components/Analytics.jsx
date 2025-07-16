@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+import { useRealtime } from '../hooks/useRealtime'
 import { subscriptionService } from '../services/subscriptionService'
 import { usePrice } from '../hooks/usePrice'
 import { Card, CardContent } from './ui/Card'
@@ -13,32 +14,37 @@ export default function Analytics({ authClient }) {
 
   const { convertSatsToUSD } = usePrice(authClient)
 
-  useEffect(() => {
+  const refreshData = useCallback(() => {
     loadData()
   }, [authClient, period])
+  
+  useRealtime(refreshData, 3000)
+  
+  useEffect(() => {
+    refreshData()
+  }, [refreshData])
 
   const loadData = async () => {
     if (!authClient) return
     
-    setLoading(true)
     try {
-      console.log('Loading analytics data...')
-      
       const statsData = await subscriptionService.getCreatorStats(authClient)
-      console.log('Stats data:', statsData)
-      setStats(statsData)
-      
       const txData = await subscriptionService.getCreatorTransactions(authClient)
-      console.log('Transaction data:', txData)
-      setTransactions(txData)
-      
       const chartDataResult = await subscriptionService.getChartData(authClient, period)
-      console.log('Chart data:', chartDataResult)
-      setChartData(chartDataResult)
+      
+      // Only update if data actually changed
+      if (JSON.stringify(statsData) !== JSON.stringify(stats)) {
+        setStats(statsData)
+      }
+      if (JSON.stringify(txData) !== JSON.stringify(transactions)) {
+        setTransactions(txData)
+      }
+      if (JSON.stringify(chartDataResult) !== JSON.stringify(chartData)) {
+        setChartData(chartDataResult)
+      }
       
     } catch (error) {
       console.error('Failed to load analytics:', error)
-      console.error('Error details:', error.message)
     }
     setLoading(false)
   }

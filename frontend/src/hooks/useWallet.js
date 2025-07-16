@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { walletService } from '../services/walletService'
+import { useRealtime } from './useRealtime'
 
 export function useWallet(authClient) {
   const [balance, setBalance] = useState(0)
@@ -10,11 +11,13 @@ export function useWallet(authClient) {
     if (!authClient) return
     
     try {
-      setLoading(true)
       setError(null)
       
       const walletBalance = await walletService.getBalance(authClient)
-      setBalance(walletBalance)
+      // Only update if balance actually changed
+      if (walletBalance !== balance) {
+        setBalance(walletBalance)
+      }
     } catch (err) {
       setError(err.message)
     } finally {
@@ -48,9 +51,15 @@ export function useWallet(authClient) {
     }
   }
 
-  useEffect(() => {
+  const refreshWallet = useCallback(() => {
     loadWallet()
   }, [authClient])
+  
+  useRealtime(refreshWallet, 5000)
+  
+  useEffect(() => {
+    refreshWallet()
+  }, [refreshWallet])
 
   return {
     balance,
