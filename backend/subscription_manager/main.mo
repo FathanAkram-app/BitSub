@@ -11,6 +11,8 @@ import Float "mo:base/Float";
 import Buffer "mo:base/Buffer";
 import Iter "mo:base/Iter";
 import Int "mo:base/Int";
+import Random "mo:base/Random";
+import Nat8 "mo:base/Nat8";
 
 actor SubscriptionManager {
     
@@ -93,9 +95,38 @@ actor SubscriptionManager {
     private var userSubscriptions = HashMap.HashMap<Principal, [Nat]>(10, Principal.equal, Principal.hash);
     private var transactions = HashMap.HashMap<Nat, Transaction>(50, func(a: Nat, b: Nat): Bool { a == b }, Nat32.fromNat);
     
+    // Generate UUID-like plan ID
+    private func generatePlanId(): async Text {
+        let seed = await Random.blob();
+        let random = Random.Finite(seed);
+        
+        func randomHex(length: Nat): Text {
+            var result = "";
+            var i = 0;
+            while (i < length) {
+                switch (random.byte()) {
+                    case (?byte) {
+                        let hex = Nat.toText(Nat8.toNat(byte % 16));
+                        result #= if (Nat8.toNat(byte % 16) < 10) hex else 
+                                 switch (Nat8.toNat(byte % 16)) {
+                                     case 10 { "a" }; case 11 { "b" }; case 12 { "c" };
+                                     case 13 { "d" }; case 14 { "e" }; case 15 { "f" };
+                                     case _ { "0" };
+                                 };
+                    };
+                    case null { result #= "0" };
+                };
+                i += 1;
+            };
+            result
+        };
+        
+        randomHex(8) # "-" # randomHex(4) # "-" # randomHex(4) # "-" # randomHex(4) # "-" # randomHex(12)
+    };
+    
     // Plan Management Functions
     public shared(msg) func createPlan(request: CreatePlanRequest): async Result.Result<Text, Text> {
-        let planId = "plan_" # Nat.toText(nextPlanId);
+        let planId = await generatePlanId();
         nextPlanId += 1;
         
         let plan: SubscriptionPlan = {
