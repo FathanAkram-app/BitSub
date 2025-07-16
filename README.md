@@ -73,7 +73,7 @@ BitSub-api/
 ```bash
 # Clone repository
 git clone <repository-url>
-cd BitSub-api
+cd BitSub
 
 # One-command setup (installs, deploys, builds everything)
 ./scripts/auto-deploy.sh
