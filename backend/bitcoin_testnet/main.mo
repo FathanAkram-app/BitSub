@@ -1,4 +1,3 @@
-import Principal "mo:base/Principal";
 import HashMap "mo:base/HashMap";
 import Time "mo:base/Time";
 import Text "mo:base/Text";

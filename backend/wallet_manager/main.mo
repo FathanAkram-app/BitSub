@@ -120,7 +120,7 @@ actor WalletManager {
     public func markAddressUsed(subscriptionId: Nat): async Bool {
         switch (subscriptionAddresses.get(subscriptionId)) {
             case null { false };
-            case (?address) {
+            case (?_) {
                 // Find and update the address record
                 for ((id, record) in addresses.entries()) {
                     if (record.subscriptionId == subscriptionId) {
@@ -192,7 +192,6 @@ actor WalletManager {
     
     // Helper function to generate random string
     private func generateRandomString(seed: Nat): Text {
-        let chars = "abcdefghijklmnopqrstuvwxyz0123456789";
         let seedText = Nat.toText(seed);
         seedText # "x" # Nat.toText(seed * 7 % 1000)
     };

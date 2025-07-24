@@ -43,11 +43,12 @@ actor PaymentProcessor {
                 let processed = await subscriptionManager.processAutomaticPayments();
                 Debug.print("Processed " # Nat.toText(processed) # " automatic payments");
             };
-        } catch (error) {
+        } catch (_) {
             Debug.print("Error processing payments");
         };
         
         paymentTimer := ?Timer.setTimer(#seconds(60), processPayments);
+        Debug.print("Payment processor started");
     };
     
     public func triggerPaymentProcessing(): async Nat {
@@ -59,7 +60,7 @@ actor PaymentProcessor {
             let processed = await subscriptionManager.processAutomaticPayments();
             Debug.print("Manually processed " # Nat.toText(processed) # " payments");
             processed
-        } catch (error) {
+        } catch (_) {
             Debug.print("Error in manual processing");
             0
         }

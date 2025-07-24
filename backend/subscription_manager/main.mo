@@ -14,7 +14,6 @@ import Int "mo:base/Int";
 import Random "mo:base/Random";
 import Nat8 "mo:base/Nat8";
 import Blob "mo:base/Blob";
-import Option "mo:base/Option";
 import Debug "mo:base/Debug";
 
 actor SubscriptionManager {
@@ -608,7 +607,7 @@ actor SubscriptionManager {
     };
     
     // Payment confirmation with webhook trigger
-    public shared(msg) func confirmPayment(subscriptionId: Nat): async Bool {
+    public shared(_) func confirmPayment(subscriptionId: Nat): async Bool {
         switch (subscriptions.get(subscriptionId)) {
             case null { false };
             case (?sub) {
@@ -941,7 +940,7 @@ actor SubscriptionManager {
                 Debug.print(errorMsg);
                 #err(errorMsg)
             }
-        } catch (error) {
+        } catch (_) {
             let errorMsg = "HTTP outcall failed: Network error";
             Debug.print(errorMsg);
             #err(errorMsg)
@@ -1219,6 +1218,7 @@ actor SubscriptionManager {
                     case (#Pending) { pendingRetries += 1 };
                     case (#Failed) { failedEvents += 1 };
                     case (#Sent) { completedEvents += 1 };
+                    case (#Disabled) { }; // Ignore disabled events
                 };
             };
         };
@@ -1309,7 +1309,7 @@ actor SubscriptionManager {
         while (attempts <= maxRetries) {
             try {
                 return await operation();
-            } catch (error) {
+            } catch (_) {
                 attempts += 1;
                 if (attempts > maxRetries) {
                     return false;
@@ -1425,7 +1425,7 @@ actor SubscriptionManager {
         try {
             let balance = await walletManager.getBalance(user);
             Nat64.toNat(balance) >= amount
-        } catch (error) {
+        } catch (_) {
             false
         }
     };
@@ -1439,7 +1439,7 @@ actor SubscriptionManager {
         
         try {
             await walletManager.withdraw(user, Nat64.fromNat(amount))
-        } catch (error) {
+        } catch (_) {
             false
         }
     };
@@ -1527,7 +1527,7 @@ actor SubscriptionManager {
                 case (#ok(usdValue)) { usdValue };
                 case (#err(_)) { 0.0 };
             }
-        } catch (error) {
+        } catch (_) {
             0.0
         }
     };

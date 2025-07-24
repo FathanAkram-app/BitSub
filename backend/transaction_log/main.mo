@@ -3,7 +3,6 @@ import HashMap "mo:base/HashMap";
 import Array "mo:base/Array";
 import Time "mo:base/Time";
 import Text "mo:base/Text";
-import Result "mo:base/Result";
 import Nat32 "mo:base/Nat32";
 import Iter "mo:base/Iter";
 import Buffer "mo:base/Buffer";

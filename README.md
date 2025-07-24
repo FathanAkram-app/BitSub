@@ -190,6 +190,30 @@ https://your-service.com/api/webhooks/bitsub-payment
 # http://127.0.0.1:4943/?canisterId=be2us-64aaa-aaaaa-qaabq-cai
 ```
 
+## ⚠️ Troubleshooting
+
+### Payment Not Processing Automatically
+If automatic payments are not working (e.g., subscription due July 20th hasn't been processed):
+
+**Issue**: Payment processor timer may not be running
+**Solution**:
+```bash
+# 1. Start the dfx replica (required for timers to work)
+dfx start --background
+
+# 2. Check if payment processor is running
+dfx canister call payment_processor getProcessorStatus
+# Should return: (true)
+
+# 3. Check for overdue subscriptions
+dfx canister call subscription_manager getOverdueSubscriptionsCount
+
+# 4. If processor returns false, restart it manually:
+dfx canister call payment_processor startPaymentProcessor
+```
+
+**Important**: Keep `dfx start` running in the background for automatic payments to continue working. The payment processor runs every 60 seconds and requires the dfx replica to be active.
+
 ## 🧪 Testing
 
 1. **Access**: http://127.0.0.1:4943/?canisterId=be2us-64aaa-aaaaa-qaabq-cai

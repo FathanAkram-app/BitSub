@@ -99,7 +99,7 @@ actor OKXIntegration {
             } else {
                 #err("HTTP request failed with status: " # Nat.toText(http_response.status))
             }
-        } catch (error) {
+        } catch (_) {
             #err("Network error calling OKX API")
         }
     };

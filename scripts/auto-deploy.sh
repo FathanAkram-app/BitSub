@@ -65,6 +65,9 @@ cd frontend && npm run build && cd ..
 echo "🔄 Redeploying frontend..."
 dfx deploy bitsub_frontend
 
+dfx start --background
+
+
 echo "✅ BitSub ready!"
 echo "🌐 Frontend: http://$FRONTEND_ID.localhost:4943"
 echo "🔐 Internet Identity: http://$INTERNET_IDENTITY_ID.localhost:4943"
