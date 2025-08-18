@@ -1,16 +1,34 @@
 {
-  "name": "bitsub-webhook-example",
+  "name": "bitsub-webhook-server",
   "version": "1.0.0",
-  "description": "BitSub webhook server example",
-  "main": "webhook-server-example.js",
+  "description": "Comprehensive webhook server example for BitSub platform",
+  "main": "comprehensive-webhook-server.js",
   "scripts": {
-    "start": "node webhook-server-example.js",
-    "dev": "nodemon webhook-server-example.js"
+    "start": "node comprehensive-webhook-server.js",
+    "dev": "nodemon comprehensive-webhook-server.js",
+    "test": "node webhook-tester.js",
+    "test-all": "npm run test -- --all",
+    "ngrok": "ngrok http 3003",
+    "install-dev": "npm install nodemon ngrok -g"
   },
+  "keywords": [
+    "webhook",
+    "bitsub",
+    "bitcoin",
+    "subscriptions",
+    "testing",
+    "express"
+  ],
+  "author": "BitSub Team",
+  "license": "MIT",
   "dependencies": {
     "express": "^4.18.2"
   },
   "devDependencies": {
-    "nodemon": "^3.0.1"
+    "nodemon": "^3.0.1",
+    "ngrok": "^4.3.3"
+  },
+  "engines": {
+    "node": ">=16.0.0"
   }
 }

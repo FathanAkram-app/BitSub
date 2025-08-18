@@ -65,6 +65,14 @@ cd frontend && npm run build && cd ..
 echo "🔄 Redeploying frontend..."
 dfx deploy bitsub_frontend
 
+# Initialize canister registry
+echo "🔧 Initializing canister registry..."
+./scripts/init-canister-registry.sh
+
+# Start payment processor
+echo "⚡ Starting payment processor..."
+./scripts/start-payment-processor.sh
+
 dfx start --background
 
 

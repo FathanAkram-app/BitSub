@@ -38,14 +38,18 @@ export default function Analytics({ authClient }: AnalyticsProps): React.ReactEl
   const [chartData, setChartData] = useState<ChartData[]>([]);
   const [period, setPeriod] = useState<string>('monthly');
   const [loading, setLoading] = useState<boolean>(true);
+  const [lastUpdate, setLastUpdate] = useState<string>('');
 
   const { convertSatsToUSD } = usePrice(authClient);
 
   const refreshData = useCallback(() => {
+    // Clear existing chart data when period changes to prevent stale data
+    setChartData([]);
+    setLoading(true);
     loadData();
   }, [authClient, period]);
   
-  useRealtime(refreshData, 3000);
+  useRealtime(refreshData, 15000); // Reduced to 15 seconds
   
   useEffect(() => {
     refreshData();
@@ -58,17 +62,17 @@ export default function Analytics({ authClient }: AnalyticsProps): React.ReactEl
       const statsData = await transactionService.getStats(authClient);
       const txData = await transactionService.getTransactions(authClient);
       const chartDataResult = await transactionService.getChartData(authClient, period);
+      console.log(`=== CHART DATA DEBUG ===`);
+      console.log(`Period: ${period}`);
+      console.log(`Raw data:`, chartDataResult);
+      console.log(`Labels:`, chartDataResult.map(d => d.label));
+      console.log(`========================`);
       
-      // Only update if data actually changed
-      if (JSON.stringify(statsData) !== JSON.stringify(stats)) {
-        setStats(statsData);
-      }
-      if (JSON.stringify(txData) !== JSON.stringify(transactions)) {
-        setTransactions(txData);
-      }
-      if (JSON.stringify(chartDataResult) !== JSON.stringify(chartData)) {
-        setChartData(chartDataResult);
-      }
+      // Force update the data to ensure fresh data is displayed
+      setStats(statsData);
+      setTransactions(txData);
+      setChartData(chartDataResult);
+      setLastUpdate(new Date().toLocaleTimeString());
       
     } catch (error) {
       console.error('Failed to load analytics:', error);
@@ -109,7 +113,9 @@ export default function Analytics({ authClient }: AnalyticsProps): React.ReactEl
           <div className="stat-icon">📈</div>
           <div className="stat-content">
             <h4>Monthly Growth</h4>
-            <div className="stat-value growth-positive">+{stats.monthlyGrowth}%</div>
+            <div className={`stat-value ${stats.monthlyGrowth >= 0 ? 'growth-positive' : 'growth-negative'}`}>
+              {stats.monthlyGrowth >= 0 ? '+' : ''}{stats.monthlyGrowth.toFixed(1)}%
+            </div>
             <div className="stat-subtitle">Revenue growth</div>
           </div>
         </div>
@@ -124,6 +130,11 @@ export default function Analytics({ authClient }: AnalyticsProps): React.ReactEl
               <p>Track your earnings over time</p>
             </div>
             <div className="chart-filters">
+              {lastUpdate && (
+                <div style={{ fontSize: '0.7rem', color: '#8892a4', marginRight: '12px' }}>
+                  Updated: {lastUpdate}
+                </div>
+              )}
               {['daily', 'monthly', 'yearly'].map((p: string) => (
                 <button 
                   key={p}
@@ -137,32 +148,40 @@ export default function Analytics({ authClient }: AnalyticsProps): React.ReactEl
           </div>
           
           <div className="chart-container">
-            {chartData.length > 0 ? (
-              <div className="chart-bars">
+            {chartData.length > 0 && chartData.some(d => d.revenue > 0) ? (
+              <div className="analytics-chart">
                 {chartData.map((data: ChartData, index: number) => {
-                  const maxRevenue = Math.max(...chartData.map((d: ChartData) => d.revenue), 1);
-                  const heightPercent = (data.revenue / maxRevenue) * 100;
+                  const maxRevenue = Math.max(...chartData.map(d => d.revenue));
+                  const height = maxRevenue > 0 ? (data.revenue / maxRevenue) * 100 : 0;
+                  
                   return (
-                    <div key={index} className="chart-bar-wrapper">
-                      <div className="chart-bar-container">
-                        <div 
-                          className="chart-bar" 
-                          style={{height: `${Math.max(heightPercent, 2)}%`}}
-                          title={`${data.label}: ${data.revenue.toLocaleString()} sats ($${convertSatsToUSD(data.revenue)})`}
-                        >
-                          <div className="bar-value">{data.revenue > 0 ? `${data.revenue.toLocaleString()}` : ''}</div>
-                        </div>
-                      </div>
+                    <div key={index} className="chart-period">
+                      <div 
+                        className="chart-bar"
+                        style={{ 
+                          height: `${Math.max(height, 2)}%`,
+                          animationDelay: `${index * 0.1}s`
+                        }}
+                        title={`${data.label}: ${data.revenue.toLocaleString()} sats ${data.revenue > 0 ? '($' + convertSatsToUSD(data.revenue) + ')' : ''}`}
+                      />
                       <div className="chart-label">{data.label}</div>
+                      <div className="chart-value">
+                        {data.revenue > 0 ? 
+                          data.revenue >= 1000 ? `${(data.revenue / 1000).toFixed(0)}k` : data.revenue.toString() 
+                          : '0'
+                        }
+                      </div>
                     </div>
                   );
                 })}
               </div>
             ) : (
               <div className="chart-empty">
-                <div className="empty-chart-icon">📊</div>
-                <h4>No revenue data yet</h4>
-                <p>Revenue trends will appear here once you start earning</p>
+                <div className="empty-icon">📊</div>
+                <div className="empty-text">
+                  <h4>No revenue data</h4>
+                  <p>Chart will show {period === 'daily' ? 'daily' : period === 'monthly' ? 'monthly' : 'yearly'} trends once you receive payments</p>
+                </div>
               </div>
             )}
           </div>
@@ -187,29 +206,32 @@ export default function Analytics({ authClient }: AnalyticsProps): React.ReactEl
                 <div className="table-col">Status</div>
               </div>
               <div className="table-body">
-                {transactions.slice(0, 10).map((tx: Transaction) => (
-                  <div key={tx.id} className="table-row">
-                    <div className="table-col">
-                      <span className="transaction-type">{tx.type}</span>
-                    </div>
-                    <div className="table-col">
-                      <span className="plan-name">{tx.planTitle}</span>
-                    </div>
-                    <div className="table-col">
-                      <span className="subscriber-id">...{tx.subscriber}</span>
-                    </div>
-                    <div className="table-col">
-                      <div className="amount-display">
-                        <span className="amount-sats">{tx.amount.toLocaleString()} sats</span>
-                        <span className="amount-usd">${convertSatsToUSD(tx.amount)}</span>
+                {[...transactions]
+                  .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()) // Sort descending
+                  .slice(0, 10)
+                  .map((tx: Transaction) => (
+                    <div key={tx.id} className="table-row">
+                      <div className="table-col">
+                        <span className="transaction-type">{tx.type}</span>
+                      </div>
+                      <div className="table-col">
+                        <span className="plan-name">{tx.planTitle}</span>
+                      </div>
+                      <div className="table-col">
+                        <span className="subscriber-id">...{tx.subscriber}</span>
+                      </div>
+                      <div className="table-col">
+                        <div className="amount-display">
+                          <span className="amount-sats">{tx.amount.toLocaleString()} sats</span>
+                          <span className="amount-usd">${convertSatsToUSD(tx.amount)}</span>
+                        </div>
+                      </div>
+                      <div className="table-col">
+                        <span className={`status-badge status-${tx.status.toLowerCase()}`}>
+                          {tx.status}
+                        </span>
                       </div>
                     </div>
-                    <div className="table-col">
-                      <span className={`status-badge status-${tx.status.toLowerCase()}`}>
-                        {tx.status}
-                      </span>
-                    </div>
-                  </div>
                 ))}
               </div>
             </div>

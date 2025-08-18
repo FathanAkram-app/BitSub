@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  webhook-server:
+    build: .
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - WEBHOOK_SECRET=webhook-test-secret-123
+      - NODE_ENV=production
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Optional: Redis for event queuing
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    profiles:
+      - with-redis
+
+  # Optional: MongoDB for event storage
+  mongodb:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=password
+    volumes:
+      - mongodb_data:/data/db
+    restart: unless-stopped
+    profiles:
+      - with-mongodb
+
+volumes:
+  mongodb_data:

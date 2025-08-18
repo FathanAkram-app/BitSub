@@ -6,7 +6,7 @@ import { Button, Card, CardContent, Loading, EmptyState } from '../components/ui
 import { formatSats, getIntervalText } from '../utils/helpers';
 import CreatePlanModal from '../components/CreatePlanModal';
 import Analytics from '../components/Analytics';
-import Insights from '../components/Insights';
+
 import ShareableLink from '../components/ShareableLink';
 import { WebhookManager } from '../components/WebhookManager';
 import '../components/WebhookManager.css';
@@ -69,7 +69,7 @@ export default function Dashboard({ authClient }: DashboardProps): React.ReactEl
       <div className="creator-navigation">
         <div className="content-container">
           <div className="creator-tabs">
-            {['plans', 'analytics', 'insights'].map(tab => (
+            {['plans', 'analytics'].map(tab => (
               <button 
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -77,18 +77,15 @@ export default function Dashboard({ authClient }: DashboardProps): React.ReactEl
               >
                 <span className="tab-icon">
                   {tab === 'plans' && '📋'}
-                  {tab === 'analytics' && '📊'}  
-                  {tab === 'insights' && '🔍'}
+                  {tab === 'analytics' && '📊'}
                 </span>
                 <span className="tab-label">
                   {tab === 'plans' && 'Plans'}
-                  {tab === 'analytics' && 'Analytics'}  
-                  {tab === 'insights' && 'Insights'}
+                  {tab === 'analytics' && 'Analytics'}
                 </span>
                 <span className="tab-count">
                   {tab === 'plans' && plans.length}
-                  {tab === 'analytics' && '•'}  
-                  {tab === 'insights' && '•'}
+                  {tab === 'analytics' && '•'}
                 </span>
               </button>
             ))}
@@ -178,12 +175,8 @@ export default function Dashboard({ authClient }: DashboardProps): React.ReactEl
             <Analytics authClient={authClient} />
           </div>
         )}
-        
-        {activeTab === 'insights' && (
-          <div className="insights-section">
-            <Insights authClient={authClient} />
-          </div>
-        )}
+
+
       </div>
 
       <CreatePlanModal
@@ -197,6 +190,7 @@ export default function Dashboard({ authClient }: DashboardProps): React.ReactEl
           <div onClick={(e) => e.stopPropagation()}>
             <WebhookManager 
               planId={selectedPlanId}
+              authClient={authClient}
               onClose={handleCloseWebhookModal}
             />
           </div>

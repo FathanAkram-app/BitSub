@@ -82,43 +82,91 @@ function FilterBar({
   onPriceRangeChange, 
   onClearFilters 
 }: FilterBarProps): React.ReactElement {
+  const hasActiveFilters = searchQuery.trim() !== '' || priceRange[0] !== 0 || priceRange[1] !== 1000000;
+  
   return (
-    <div className="filter-bar">
-      <div className="search-section">
-        <input
-          type="text"
-          placeholder="Search plans..."
-          value={searchQuery}
-          onChange={(e) => onSearchChange(e.target.value)}
-          className="search-input"
-        />
-      </div>
-      
-      <div className="filter-section">
-        <div className="price-filter">
-          <label>Price Range (sats):</label>
-          <div className="range-inputs">
+    <div className="filter-bar-redesign">
+      <div className="filter-container">
+        {/* Search Section */}
+        <div className="filter-section search-section">
+          <div className="filter-header">
+            <span className="filter-icon">🔍</span>
+            <span className="filter-title">Search</span>
+          </div>
+          <div className="search-input-wrapper">
             <input
-              type="number"
-              placeholder="Min"
-              value={priceRange[0] || ''}
-              onChange={(e) => onPriceRangeChange([parseInt(e.target.value) || 0, priceRange[1]])}
-              className="range-input"
+              type="text"
+              placeholder="Search by title or description..."
+              value={searchQuery}
+              onChange={(e) => onSearchChange(e.target.value)}
+              className="input search-input-redesign"
             />
-            <span>to</span>
-            <input
-              type="number"
-              placeholder="Max"
-              value={priceRange[1] || ''}
-              onChange={(e) => onPriceRangeChange([priceRange[0], parseInt(e.target.value) || 1000000])}
-              className="range-input"
-            />
+            {searchQuery && (
+              <button 
+                onClick={() => onSearchChange('')}
+                className="clear-search-btn"
+                title="Clear search"
+              >
+                ✕
+              </button>
+            )}
           </div>
         </div>
-        
-        <Button onClick={onClearFilters} variant="secondary" size="sm">
-          Clear Filters
-        </Button>
+
+        {/* Price Filter Section */}
+        <div className="filter-section price-section">
+          <div className="filter-header">
+            <span className="filter-icon">💰</span>
+            <span className="filter-title">Price Range</span>
+          </div>
+          <div className="price-range-wrapper">
+            <div className="price-input-group">
+              <label className="price-label">Min (sats)</label>
+              <input
+                type="number"
+                placeholder="0"
+                value={priceRange[0] || ''}
+                onChange={(e) => onPriceRangeChange([parseInt(e.target.value) || 0, priceRange[1]])}
+                className="input price-input-redesign"
+                min="0"
+              />
+            </div>
+            <div className="price-separator">
+              <span>to</span>
+            </div>
+            <div className="price-input-group">
+              <label className="price-label">Max (sats)</label>
+              <input
+                type="number"
+                placeholder="No limit"
+                value={priceRange[1] === 1000000 ? '' : priceRange[1]}
+                onChange={(e) => onPriceRangeChange([priceRange[0], parseInt(e.target.value) || 1000000])}
+                className="input price-input-redesign"
+                min="0"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Actions Section */}
+        <div className="filter-actions">
+          {hasActiveFilters && (
+            <div className="active-filters-indicator">
+              <span className="filter-dot"></span>
+              <span className="filter-count">Filters active</span>
+            </div>
+          )}
+          <Button 
+            onClick={onClearFilters} 
+            variant="secondary" 
+            size="sm"
+            className="clear-filters-btn"
+            disabled={!hasActiveFilters}
+          >
+            <span>🗑️</span>
+            Clear All
+          </Button>
+        </div>
       </div>
     </div>
   );

@@ -5,6 +5,8 @@ import { HttpAgent, Actor } from '@dfinity/agent';
 import { LoginPage, DashboardPage, SubscriberPage, SelectorPage, MarketplacePage } from './pages';
 import Navigation from './components/Navigation';
 import Header from './components/Header';
+import { ToastContainer } from './components/ui/Toast';
+import { UserProfile } from './components/UserProfile';
 import { ENV } from './config/env';
 import './App.css';
 
@@ -286,11 +288,19 @@ function App(): React.ReactElement {
 
   return (
     <div className="app">
+      {/* Skip to main content link for accessibility */}
+      <a href="#main-content" className="skip-link">
+        Skip to main content
+      </a>
+
       {!isAuthenticated ? (
         <>
           <Header />
           {loading ? (
-            <div className="loading">Loading...</div>
+            <div className="loading">
+              <div className="loading-spinner"></div>
+              <p>Loading BitSub...</p>
+            </div>
           ) : (
             <LoginPage onLogin={login} />
           )}
@@ -301,10 +311,19 @@ function App(): React.ReactElement {
             dashboardType={dashboardType}
             onSwitchDashboard={handleSwitchDashboard}
             onLogout={logout}
-          />
-          {renderDashboard()}
+          >
+            {/* User Profile in Navigation */}
+            <UserProfile authClient={authClient} />
+          </Navigation>
+          
+          <main id="main-content" className="flex-1">
+            {renderDashboard()}
+          </main>
         </>
       )}
+
+      {/* Global Toast Container */}
+      <ToastContainer />
     </div>
   )
 }

@@ -9,7 +9,19 @@ interface ModalActionsProps {
   children: React.ReactNode;
 }
 
-export function Modal({ isOpen, onClose, children, title }: ModalProps): React.ReactElement | null {
+interface ExtendedModalProps extends ModalProps {
+  size?: 'sm' | 'md' | 'lg' | 'xl';
+  className?: string;
+}
+
+export function Modal({ 
+  isOpen, 
+  onClose, 
+  children, 
+  title, 
+  size = 'md',
+  className = '' 
+}: ExtendedModalProps): React.ReactElement | null {
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && isOpen) {
@@ -30,6 +42,13 @@ export function Modal({ isOpen, onClose, children, title }: ModalProps): React.R
 
   if (!isOpen) return null;
 
+  const sizeClasses = {
+    sm: 'max-w-md',
+    md: 'max-w-lg',
+    lg: 'max-w-2xl',
+    xl: 'max-w-4xl'
+  };
+
   return (
     <div 
       className="modal-overlay" 
@@ -39,23 +58,26 @@ export function Modal({ isOpen, onClose, children, title }: ModalProps): React.R
       aria-labelledby={title ? "modal-title" : undefined}
     >
       <div 
-        className="modal" 
+        className={`modal ${sizeClasses[size]} ${className}`}
         onClick={(e) => e.stopPropagation()}
         role="document"
       >
         {title && (
           <div className="modal-header">
-            <h3 id="modal-title">{title}</h3>
+            <h2 className="modal-title" id="modal-title">{title}</h2>
             <button 
               onClick={onClose} 
-              className="close-btn"
+              className="modal-close"
               aria-label="Close modal"
+              type="button"
             >
-              ×
+              ✕
             </button>
           </div>
         )}
-        {children}
+        <div className="modal-body">
+          {children}
+        </div>
       </div>
     </div>
   );

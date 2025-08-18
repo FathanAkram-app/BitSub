@@ -214,6 +214,21 @@ dfx canister call payment_processor startPaymentProcessor
 
 **Important**: Keep `dfx start` running in the background for automatic payments to continue working. The payment processor runs every 60 seconds and requires the dfx replica to be active.
 
+### Payment Failed: Insufficient Funds Despite Having Balance
+If payments fail with "insufficient funds" even though wallet has balance:
+
+**Issue**: Canister registry configuration - subscription manager can't find wallet manager
+**Solution**:
+```bash
+# Initialize canister registry with correct IDs
+./scripts/init-canister-registry.sh
+
+# Or manually register:
+dfx canister call subscription_manager registerCanister '("wallet_manager", principal "$(dfx canister id wallet_manager)")'
+```
+
+**Root Cause**: The subscription manager needs to know the correct canister IDs for inter-canister calls. The auto-deploy script now automatically runs the initialization.
+
 ## 🧪 Testing
 
 1. **Access**: http://127.0.0.1:4943/?canisterId=be2us-64aaa-aaaaa-qaabq-cai

@@ -218,11 +218,12 @@ export default function SubscriberDashboard({ authClient, onSwitchToMarketplace 
           
           <div className="quick-subscribe-form">
             <div className="form-row">
-              <Input
+              <input
+                type="text"
                 value={planId}
                 onChange={(e) => setPlanId(e.target.value)}
                 placeholder="Enter plan ID (e.g., plan_abc123)"
-                className="plan-id-input"
+                className="input plan-id-input"
               />
               <Button onClick={lookupPlan} loading={loading} variant="secondary">
                 🔍 Lookup

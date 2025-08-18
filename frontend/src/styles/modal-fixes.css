@@ -1,0 +1,319 @@
+/* Modal Layout Fixes - Improved Contrast */
+
+/* Reset margins for modal content */
+.modal-body * {
+  box-sizing: border-box;
+}
+
+.modal-body h1,
+.modal-body h2,
+.modal-body h3,
+.modal-body h4,
+.modal-body h5,
+.modal-body h6 {
+  margin-top: 0;
+  margin-bottom: var(--space-4);
+  color: var(--text-primary);
+}
+
+.modal-body p {
+  margin-top: 0;
+  margin-bottom: var(--space-3);
+  color: var(--text-secondary);
+}
+
+.modal-body p:last-child {
+  margin-bottom: 0;
+}
+
+/* Modal text improvements */
+.modal-body label {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.modal-body .text-muted,
+.modal-body .help-text {
+  color: var(--text-muted);
+}
+
+/* Form layout in modals */
+.modal-body .form-field {
+  margin-bottom: var(--space-4);
+}
+
+.modal-body .form-field:last-child {
+  margin-bottom: 0;
+}
+
+.modal-body .form-actions {
+  margin-top: var(--space-6);
+  margin-bottom: 0;
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border-primary);
+}
+
+/* Profile modal specific fixes - handled in profile.css */
+
+.profile-modal .tab-content {
+  margin-top: var(--space-4);
+}
+
+.profile-modal .profile-section,
+.profile-modal .preferences-section {
+  margin-bottom: var(--space-6);
+}
+
+.profile-modal .profile-section:last-child,
+.profile-modal .preferences-section:last-child {
+  margin-bottom: 0;
+}
+
+.profile-modal .profile-field {
+  margin-bottom: var(--space-4);
+}
+
+.profile-modal .profile-actions {
+  margin-top: var(--space-6);
+}
+
+.profile-modal .insights-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.profile-modal .insight-item {
+  padding: var(--space-4);
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-primary);
+}
+
+.profile-modal .insight-label {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  margin-bottom: var(--space-1);
+}
+
+.profile-modal .insight-value {
+  font-size: var(--text-xl);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--space-2);
+}
+
+.profile-modal .insight-description {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* Trial/Discount modal fixes */
+.create-trial-form,
+.create-discount-form {
+  max-width: none;
+}
+
+.create-discount-form .form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.create-discount-form .form-row:last-child {
+  margin-bottom: 0;
+}
+
+/* Trial manager content */
+.trial-manager-header {
+  margin-bottom: var(--space-6);
+}
+
+.trial-manager-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border-primary);
+  margin-bottom: var(--space-6);
+}
+
+.trial-manager-tabs .tab {
+  padding: var(--space-3) var(--space-6);
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  border-bottom: 2px solid transparent;
+}
+
+.trial-manager-tabs .tab:hover {
+  color: var(--text-secondary);
+}
+
+.trial-manager-tabs .tab.active {
+  color: var(--primary-600);
+  border-bottom-color: var(--primary-500);
+}
+
+/* Analytics content spacing */
+.analytics-header {
+  margin-bottom: var(--space-6);
+}
+
+.analytics-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+.analytics-chart-section {
+  margin-bottom: var(--space-6);
+}
+
+.chart-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+}
+
+.chart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-6);
+}
+
+/* Advanced analytics layout */
+.advanced-analytics {
+  max-width: none;
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--space-4);
+  margin-bottom: var(--space-8);
+}
+
+.metric-card {
+  padding: var(--space-6);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-xl);
+}
+
+/* Webhook modal overlay fix */
+.webhook-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgb(0 0 0 / 0.6);
+  backdrop-filter: blur(8px);
+  z-index: var(--z-modal-backdrop);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+}
+
+/* Table styling in modals */
+.modal-body table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: var(--space-4) 0;
+}
+
+.modal-body table th,
+.modal-body table td {
+  padding: var(--space-3);
+  text-align: left;
+  border-bottom: 1px solid var(--border-primary);
+}
+
+.modal-body table th {
+  background: var(--bg-tertiary);
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+/* Button spacing in modals */
+.modal-body .btn + .btn {
+  margin-left: var(--space-2);
+}
+
+/* List styling in modals */
+.modal-body ul,
+.modal-body ol {
+  margin: var(--space-3) 0;
+  padding-left: var(--space-6);
+}
+
+.modal-body ul li,
+.modal-body ol li {
+  margin-bottom: var(--space-2);
+}
+
+.modal-body ul li:last-child,
+.modal-body ol li:last-child {
+  margin-bottom: 0;
+}
+
+/* Code blocks in modals */
+.modal-body code {
+  background: var(--bg-tertiary);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-family-mono);
+  font-size: var(--text-sm);
+}
+
+.modal-body pre {
+  background: var(--bg-tertiary);
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  overflow-x: auto;
+  margin: var(--space-4) 0;
+}
+
+.modal-body pre code {
+  background: none;
+  padding: 0;
+}
+
+/* Mobile modal improvements */
+@media (max-width: 640px) {
+  .create-discount-form .form-row {
+    grid-template-columns: 1fr;
+    gap: var(--space-3);
+  }
+
+
+  .metrics-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-3);
+  }
+
+  .analytics-stats-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-3);
+  }
+
+  .trial-manager-tabs {
+    flex-direction: column;
+    border-bottom: none;
+    border-right: 1px solid var(--border-primary);
+  }
+
+  .trial-manager-tabs .tab {
+    text-align: left;
+    border-bottom: none;
+    border-left: 2px solid transparent;
+  }
+
+  .trial-manager-tabs .tab.active {
+    border-left-color: var(--primary-500);
+    border-bottom-color: transparent;
+  }
+}

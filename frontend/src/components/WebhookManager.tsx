@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from './ui';
 import { useNotifications } from './NotificationSystem';
+import { subscriptionService } from '../services/subscriptionService';
+import { AuthClient } from '@dfinity/auth-client';
+import './WebhookManager.css';
 
 // Add global type augmentation for window.ic
 declare global {
@@ -62,6 +65,7 @@ export type WebhookEventType =
 
 interface WebhookManagerProps {
   planId: string;
+  authClient: AuthClient;
   onClose: () => void;
 }
 
@@ -93,7 +97,7 @@ const WEBHOOK_EVENT_TYPES: { value: WebhookEventType; label: string; description
   }
 ];
 
-export function WebhookManager({ planId, onClose }: WebhookManagerProps): React.ReactElement {
+export function WebhookManager({ planId, authClient, onClose }: WebhookManagerProps): React.ReactElement {
   const [webhookConfig, setWebhookConfig] = useState<WebhookConfig>({
     url: '',
     secret: '',
@@ -125,94 +129,77 @@ export function WebhookManager({ planId, onClose }: WebhookManagerProps): React.
   const loadWebhookConfig = useCallback(async () => {
     try {
       setLoading(true);
-      // TODO: Replace with actual canister call
-      const response = await window.ic.plug.agent.query(planId, 'getWebhookConfig', [planId]);
-      if (response.Ok) {
-        setWebhookConfig(response.Ok);
+      const config = await subscriptionService.getWebhookConfig(authClient, planId);
+      if (config) {
+        setWebhookConfig(config);
       }
     } catch (error) {
       console.error('Failed to load webhook config:', error);
     } finally {
       setLoading(false);
     }
-  }, [planId]);
+  }, [planId, authClient]);
 
   // Load webhook events
   const loadWebhookEvents = useCallback(async () => {
     try {
-      // TODO: Replace with actual canister call
-      const response = await window.ic.plug.agent.query(planId, 'getWebhookEvents', [planId]);
-      if (response.length > 0) {
-        setWebhookEvents(response);
-        setFilteredEvents(response); // Initialize filtered events
-      }
+      const events = await subscriptionService.getWebhookEvents(authClient, planId);
+      setWebhookEvents(events);
+      setFilteredEvents(events); // Initialize filtered events
     } catch (error) {
       console.error('Failed to load webhook events:', error);
     }
-  }, [planId]);
+  }, [planId, authClient]);
 
   // Load filtered webhook events
   const loadFilteredWebhookEvents = useCallback(async () => {
     try {
-      const eventTypes = filters.eventTypes.length > 0 ? filters.eventTypes : null;
-      const statuses = filters.statuses.length > 0 ? filters.statuses : null;
-      const fromTime = filters.dateRange.from ? new Date(filters.dateRange.from).getTime() * 1000000 : null;
-      const toTime = filters.dateRange.to ? new Date(filters.dateRange.to).getTime() * 1000000 : null;
+      const filterParams = {
+        eventTypes: filters.eventTypes.length > 0 ? filters.eventTypes : [],
+        statuses: filters.statuses.length > 0 ? filters.statuses : [],
+        fromTime: filters.dateRange.from ? new Date(filters.dateRange.from).getTime() * 1000000 : null,
+        toTime: filters.dateRange.to ? new Date(filters.dateRange.to).getTime() * 1000000 : null,
+        limit: filters.limit
+      };
       
-      // TODO: Replace with actual canister call
-      const response = await window.ic.plug.agent.query(planId, 'getFilteredWebhookEvents', [
-        planId,
-        eventTypes,
-        statuses,
-        fromTime,
-        toTime,
-        filters.limit
-      ]);
-      
-      setFilteredEvents(response);
+      const events = await subscriptionService.getFilteredWebhookEvents(authClient, planId, filterParams);
+      setFilteredEvents(events);
     } catch (error) {
       console.error('Failed to load filtered webhook events:', error);
     }
-  }, [planId, filters]);
+  }, [planId, authClient, filters]);
 
   // Load event breakdown for analytics
   const loadEventBreakdown = useCallback(async () => {
     try {
-      // TODO: Replace with actual canister call
-      const response = await window.ic.plug.agent.query(planId, 'getWebhookEventBreakdown', [planId]);
-      const breakdown = response.map(([eventType, count]: [string, number]) => ({
-        eventType: eventType as WebhookEventType,
-        count
-      }));
+      const breakdown = await subscriptionService.getWebhookEventBreakdown(authClient, planId);
       setEventBreakdown(breakdown);
     } catch (error) {
       console.error('Failed to load event breakdown:', error);
     }
-  }, [planId]);
+  }, [planId, authClient]);
 
   // Load retry statistics
   const loadRetryStats = useCallback(async () => {
     try {
-      // TODO: Replace with actual canister call
-      const response = await window.ic.plug.agent.query(planId, 'getWebhookRetryStats', [planId]);
-      setRetryStats(response);
+      const stats = await subscriptionService.getWebhookRetryStats(authClient, planId);
+      setRetryStats(stats);
     } catch (error) {
       console.error('Failed to load retry stats:', error);
     }
-  }, [planId]);
+  }, [planId, authClient]);
 
   // Load verification info
   const loadVerificationInfo = useCallback(async () => {
     try {
-      // TODO: Replace with actual canister call
-      const response = await window.ic.plug.agent.query(planId, 'getWebhookVerificationInfo', [planId]);
-      if (response.Ok) {
-        setVerificationInfo(response.Ok);
+      const info = await subscriptionService.getWebhookVerificationInfo(authClient, planId);
+      if (info) {
+        setVerificationInfo(info);
       }
     } catch (error) {
       console.error('Failed to load verification info:', error);
     }
-  }, [planId]);
+  }, [planId, authClient]);
 
   useEffect(() => {
     loadWebhookConfig();
@@ -260,20 +247,23 @@ export function WebhookManager({ planId, onClose }: WebhookManagerProps): React.
 
     try {
       setLoading(true);
-      // TODO: Replace with actual canister call
-      const response = await window.ic.plug.agent.update(planId, 'configureWebhook', [
-        planId,
-        webhookConfig.url,
-        webhookConfig.secret,
-        webhookConfig.events,
-        webhookConfig.isActive
-      ]);
+      
+      const config = {
+        url: webhookConfig.url,
+        secret: webhookConfig.secret,
+        events: webhookConfig.events,
+        isActive: webhookConfig.isActive,
+        maxRetries: 3,
+        timeout: 30
+      };
 
-      if (response.Ok) {
+      const response = await subscriptionService.configureWebhook(authClient, planId, config);
+
+      if ('ok' in response) {
         showSuccess('Webhook Configured', 'Webhook settings have been saved successfully');
         await loadVerificationInfo();
       } else {
-        showError('Configuration Failed', response.Err || 'Failed to save webhook configuration');
+        showError('Configuration Failed', response.err || 'Failed to save webhook configuration');
       }
     } catch (error) {
       showError('Configuration Failed', `Error: ${error}`);
@@ -291,15 +281,14 @@ export function WebhookManager({ planId, onClose }: WebhookManagerProps): React.
 
     try {
       setTesting(true);
-      // TODO: Replace with actual canister call
-      const response = await window.ic.plug.agent.update(planId, 'testWebhook', [planId]);
+      const response = await subscriptionService.testWebhook(authClient, planId);
 
-      if (response.Ok) {
+      if ('ok' in response) {
         showSuccess('Test Successful', 'Test webhook was sent successfully');
         await loadWebhookEvents(); // Refresh events to show the test
         await loadRetryStats(); // Refresh stats
       } else {
-        showError('Test Failed', response.Err || 'Failed to send test webhook');
+        showError('Test Failed', response.err || 'Failed to send test webhook');
       }
     } catch (error) {
       showError('Test Failed', `Error: ${error}`);
@@ -312,15 +301,14 @@ export function WebhookManager({ planId, onClose }: WebhookManagerProps): React.
   const retryWebhookEvent = async (eventId: string): Promise<void> => {
     try {
       setRetrying(eventId);
-      // TODO: Replace with actual canister call
-      const response = await window.ic.plug.agent.update(planId, 'retryWebhookEvent', [parseInt(eventId)]);
+      const response = await subscriptionService.retryWebhookEvent(authClient, parseInt(eventId));
 
-      if (response.Ok) {
+      if ('ok' in response) {
         showSuccess('Retry Initiated', 'Webhook event retry has been initiated');
         await loadWebhookEvents(); // Refresh events
         await loadRetryStats(); // Refresh stats
       } else {
-        showError('Retry Failed', response.Err || 'Failed to retry webhook event');
+        showError('Retry Failed', response.err || 'Failed to retry webhook event');
       }
     } catch (error) {
       showError('Retry Failed', `Error: ${error}`);
@@ -333,16 +321,11 @@ export function WebhookManager({ planId, onClose }: WebhookManagerProps): React.
   const retryAllFailedWebhooks = async (): Promise<void> => {
     try {
       setLoading(true);
-      // TODO: Replace with actual canister call
-      const response = await window.ic.plug.agent.update(planId, 'retryFailedWebhooks', []);
+      const retriedCount = await subscriptionService.retryFailedWebhooks(authClient);
 
-      if (typeof response === 'number') {
-        showSuccess('Batch Retry Initiated', `${response} webhook events have been queued for retry`);
-        await loadWebhookEvents(); // Refresh events
-        await loadRetryStats(); // Refresh stats
-      } else {
-        showError('Batch Retry Failed', 'Failed to retry failed webhook events');
-      }
+      showSuccess('Batch Retry Initiated', `${retriedCount} webhook events have been queued for retry`);
+      await loadWebhookEvents(); // Refresh events
+      await loadRetryStats(); // Refresh stats
     } catch (error) {
       showError('Batch Retry Failed', `Error: ${error}`);
     } finally {

@@ -1,0 +1,280 @@
+/* Modern Marketplace Filter Redesign */
+
+.filter-bar-redesign {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+  margin-bottom: var(--space-6);
+  box-shadow: var(--shadow-sm);
+}
+
+.filter-container {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: var(--space-6);
+  align-items: start;
+}
+
+/* Filter Sections */
+.filter-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.filter-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.filter-icon {
+  font-size: var(--text-lg);
+}
+
+.filter-title {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Search Section */
+.search-section {
+  min-width: 300px;
+}
+
+.search-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-input-redesign {
+  width: 100%;
+  padding-right: 2.5rem;
+  font-size: var(--text-base);
+}
+
+.clear-search-btn {
+  position: absolute;
+  right: var(--space-3);
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: var(--space-1);
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+  font-size: var(--text-sm);
+  width: 1.5rem;
+  height: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.clear-search-btn:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
+/* Price Section */
+.price-section {
+  min-width: 280px;
+}
+
+.price-range-wrapper {
+  display: flex;
+  align-items: end;
+  gap: var(--space-3);
+}
+
+.price-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  flex: 1;
+}
+
+.price-label {
+  font-size: var(--text-xs);
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.price-input-redesign {
+  width: 100%;
+  text-align: center;
+  font-family: var(--font-family-mono);
+  font-size: var(--text-sm);
+}
+
+.price-separator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-bottom: var(--space-2);
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  min-width: 2rem;
+}
+
+/* Filter Actions */
+.filter-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: end;
+  gap: var(--space-3);
+  min-width: 120px;
+}
+
+.active-filters-indicator {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--primary-800);
+  border: 1px solid var(--primary-700);
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  color: var(--primary-200);
+  font-weight: 500;
+}
+
+.filter-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  background: var(--primary-500);
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.filter-count {
+  white-space: nowrap;
+}
+
+.clear-filters-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.clear-filters-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.clear-filters-btn span:first-child {
+  font-size: var(--text-sm);
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 1024px) {
+  .filter-container {
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
+
+  .filter-actions {
+    align-items: start;
+    flex-direction: row;
+    justify-content: space-between;
+  }
+
+  .search-section,
+  .price-section {
+    min-width: auto;
+  }
+}
+
+@media (max-width: 640px) {
+  .filter-bar-redesign {
+    padding: var(--space-4);
+    margin-bottom: var(--space-4);
+  }
+
+  .filter-container {
+    gap: var(--space-3);
+  }
+
+  .price-range-wrapper {
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .price-separator {
+    padding: 0;
+    min-width: auto;
+  }
+
+  .price-separator span {
+    transform: rotate(90deg);
+  }
+
+  .filter-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-2);
+  }
+
+  .active-filters-indicator {
+    justify-content: center;
+  }
+}
+
+/* Enhanced Input Styling for Filters */
+.search-input-redesign,
+.price-input-redesign {
+  transition: all var(--transition-fast);
+}
+
+.search-input-redesign:focus,
+.price-input-redesign:focus {
+  border-color: var(--primary-500);
+  box-shadow: 0 0 0 3px rgb(14 165 233 / 0.1);
+  transform: translateY(-1px);
+}
+
+/* Better placeholder styling */
+.search-input-redesign::placeholder,
+.price-input-redesign::placeholder {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* Number input styling */
+.price-input-redesign::-webkit-outer-spin-button,
+.price-input-redesign::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.price-input-redesign[type=number] {
+  -moz-appearance: textfield;
+}
+
+/* Hover effects */
+.filter-section:hover .filter-icon {
+  transform: scale(1.1);
+  transition: transform var(--transition-fast);
+}
+
+.search-input-wrapper:hover .search-input-redesign {
+  border-color: var(--border-secondary);
+}
+
+.price-input-group:hover .price-input-redesign {
+  border-color: var(--border-secondary);
+}

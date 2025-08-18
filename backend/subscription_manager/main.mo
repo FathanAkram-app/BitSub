@@ -519,6 +519,14 @@ actor SubscriptionManager {
                         };
                         transactions.put(nextTransactionId, paymentTx);
                         nextTransactionId += 1;
+                        
+                        // Trigger webhook for initial payment successful
+                        ignore callWebhook(#PaymentSuccessful, paidSubscription, plan, ?{
+                            timestamp = currentTime;
+                            nextPayment = paidSubscription.nextPayment;
+                            amount = plan.amount;
+                            status = "confirmed";
+                        });
                     };
                 };
                 
@@ -530,6 +538,9 @@ actor SubscriptionManager {
                 let buffer = Buffer.fromArray<Nat>(currentSubs);
                 buffer.add(subscriptionId);
                 userSubscriptions.put(msg.caller, Buffer.toArray(buffer));
+                
+                // Trigger webhook for subscription created
+                ignore callWebhook(#SubscriptionCreated, subscription, plan, null);
                 
                 #ok(subscriptionId)
             };
@@ -571,6 +582,14 @@ actor SubscriptionManager {
                     case (?subIds) {
                         let filteredSubs = Array.filter<Nat>(subIds, func(id) = id != subscriptionId);
                         userSubscriptions.put(msg.caller, filteredSubs);
+                    };
+                    case null { };
+                };
+                
+                // Trigger webhook for subscription cancelled before removing the subscription
+                switch (plans.get(sub.planId)) {
+                    case (?plan) {
+                        ignore callWebhook(#SubscriptionCancelled, sub, plan, null);
                     };
                     case null { };
                 };
@@ -1403,8 +1422,32 @@ actor SubscriptionManager {
                                 transactions.put(nextTransactionId, transaction);
                                 nextTransactionId += 1;
                                 
+                                // Trigger webhook for automatic payment successful
+                                ignore callWebhook(#PaymentSuccessful, updatedSub, plan, ?{
+                                    timestamp = currentTime;
+                                    nextPayment = updatedSub.nextPayment;
+                                    amount = plan.amount;
+                                    status = "confirmed";
+                                });
+                                
                                 paymentsProcessed += 1;
+                            } else {
+                                // Payment deduction failed - trigger failed webhook
+                                ignore callWebhook(#PaymentFailed, sub, plan, ?{
+                                    timestamp = currentTime;
+                                    nextPayment = sub.nextPayment;
+                                    amount = plan.amount;
+                                    status = "failed_deduction";
+                                });
                             };
+                        } else {
+                            // Insufficient balance - trigger failed webhook
+                            ignore callWebhook(#PaymentFailed, sub, plan, ?{
+                                timestamp = currentTime;
+                                nextPayment = sub.nextPayment;
+                                amount = plan.amount;
+                                status = "insufficient_funds";
+                            });
                         };
                     };
                     case null { };
@@ -1463,26 +1506,65 @@ actor SubscriptionManager {
 
     
     // Get creator plan insights
-    public query func getCreatorPlanInsights(creator: Principal): async [{ planId: Text; title: Text; subscribers: Nat; revenue: Nat }] {
-        let buffer = Buffer.Buffer<{ planId: Text; title: Text; subscribers: Nat; revenue: Nat }>(0);
+    public query func getCreatorPlanInsights(creator: Principal): async [{ planId: Text; title: Text; subscribers: Nat; revenue: Nat; growth: Float; churnRate: Float }] {
+        let buffer = Buffer.Buffer<{ planId: Text; title: Text; subscribers: Nat; revenue: Nat; growth: Float; churnRate: Float }>(0);
         
         for ((planId, plan) in plans.entries()) {
             if (plan.creator == creator) {
                 var subscribers: Nat = 0;
                 var revenue: Nat = 0;
+                var lastMonthRevenue: Nat = 0;
+                var cancelledSubscriptions: Nat = 0;
+                var totalSubscriptionsEver: Nat = 0;
                 
-                // Count subscribers for this plan
+                let now = Time.now();
+                let oneMonthAgo = now - (30 * 24 * 60 * 60 * 1_000_000_000); // 30 days in nanoseconds
+                
+                // Count active subscribers for this plan
                 for ((_, sub) in subscriptions.entries()) {
                     if (sub.planId == planId and sub.status == #Active) {
                         subscribers += 1;
                     };
+                    if (sub.planId == planId and sub.status == #Canceled) {
+                        cancelledSubscriptions += 1;
+                    };
+                    if (sub.planId == planId) {
+                        totalSubscriptionsEver += 1;
+                    };
                 };
                 
-                // Calculate revenue for this plan
+                // Calculate revenue for this plan (current and last month)
                 for ((_, tx) in transactions.entries()) {
                     if (tx.planId == planId and tx.txType == #Payment and tx.status == #Confirmed) {
                         revenue += tx.amount;
+                        
+                        // Count revenue from over a month ago for growth calculation
+                        if (tx.timestamp < oneMonthAgo) {
+                            lastMonthRevenue += tx.amount;
+                        };
                     };
+                };
+                
+                // Calculate growth rate (month-over-month revenue growth)
+                let currentMonthRevenue = if (revenue >= lastMonthRevenue) { revenue - lastMonthRevenue } else { 0 };
+                let growth: Float = if (lastMonthRevenue > 0) {
+                    let growthAmount = if (currentMonthRevenue >= lastMonthRevenue) { 
+                        currentMonthRevenue - lastMonthRevenue 
+                    } else { 
+                        0 
+                    };
+                    Float.fromInt(growthAmount) / Float.fromInt(lastMonthRevenue) * 100.0;
+                } else if (currentMonthRevenue > 0) {
+                    100.0; // If no previous revenue, 100% growth
+                } else {
+                    0.0;
+                };
+                
+                // Calculate churn rate (cancelled / total ever created)
+                let churnRate: Float = if (totalSubscriptionsEver > 0) {
+                    Float.fromInt(cancelledSubscriptions) / Float.fromInt(totalSubscriptionsEver) * 100.0;
+                } else {
+                    0.0;
                 };
                 
                 let insight = {
@@ -1490,6 +1572,8 @@ actor SubscriptionManager {
                     title = plan.title;
                     subscribers = subscribers;
                     revenue = revenue;
+                    growth = growth;
+                    churnRate = churnRate;
                 };
                 
                 buffer.add(insight);
@@ -1533,33 +1617,169 @@ actor SubscriptionManager {
     };
     
     // Get chart data for different time periods
+    // Helper function to convert timestamp to day/month
+    func timestampToDateString(ts: Int, mode: Text): Text {
+        // Convert from nanoseconds to seconds
+        let seconds : Int = ts / 1_000_000_000;
+
+        // Basic conversion to days since epoch
+        let days: Int = seconds / (24 * 60 * 60);
+
+        // Julian day-based approximation for UTC date
+        let jd = days + 2440588; // Unix epoch to Julian day
+        let l = jd + 68569;
+        let n = (4 * l) / 146097;
+        let l1 = l - (146097 * n + 3) / 4;
+        let i = (4000 * (l1 + 1)) / 1461001;
+        let l2 = l1 - (1461 * i) / 4 + 31;
+        let j = (80 * l2) / 2447;
+        let d = l2 - (2447 * j) / 80;
+        let l3 = j / 11;
+        let m = j + 2 - 12 * l3;
+        let y = 100 * (n - 49) + i + l3;
+
+        // Arrays for day and month names
+        let monthNames = ["January", "February", "March", "April", "May", "June", 
+                        "July", "August", "September", "October", "November", "December"];
+        let dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+        // Calculate weekday index (0 = Sunday)
+        let weekdayIndex = (days + 4) % 7; // Unix epoch (1970-01-01) was Thursday
+
+        // Convert to string parts
+        let year = Int.toText(y);
+        let monthName = monthNames[Int.abs(m) - 1];
+        let day = Int.toText(d);
+        let weekdayName = dayNames[Int.abs(weekdayIndex)];
+
+        switch (mode) {
+            case ("day") { weekdayName };              // e.g., "Monday"
+            case ("month") { monthName };             // e.g., "January"
+            case ("year") { year };                   // e.g., "2025"
+            case (_) { weekdayName # ", " # monthName # " " # day # ", " # year }; // Full date
+        }
+    };
+
+
     public query func getChartData(creator: Principal, period: Text): async [(Text, Nat)] {
-        var chartData: [(Text, Nat)] = [];
-        
-        // Calculate total revenue for creator
-        var totalRevenue: Nat = 0;
-        for ((_, tx) in transactions.entries()) {
-            switch (plans.get(tx.planId)) {
-                case (?plan) {
-                    if (plan.creator == creator and tx.txType == #Payment and tx.status == #Confirmed) {
-                        totalRevenue += tx.amount;
+        let buffer = Buffer.Buffer<(Text, Nat)>(12);
+        let now : Int = Time.now(); // nanoseconds
+
+        let dayInNs   : Int = 24 * 60 * 60 * 1_000_000_000;
+        let monthInNs : Int = 30 * dayInNs;   // approximate month length
+        let yearInNs  : Int = 365 * dayInNs;  // approximate year length
+
+        // Align to start of current day (UTC)
+        let alignedDayNow : Int = now - (now % dayInNs);
+
+        // Helper: parse Y, M, D from "YYYY-MM-DD"
+        func ymd(ts: Int) : (Nat, Nat, Nat) {
+            let s = timestampToDateString(ts, "day"); // "YYYY-MM-DD"
+            let arr = Iter.toArray(Text.split(s, #char '-'));
+
+            var y : Nat = 1970;
+            var m : Nat = 1;
+            var d : Nat = 1;
+
+            if (Array.size(arr) >= 1) {
+                switch (Nat.fromText(arr[0])) { case (?n) { y := n }; case null {} };
+            };
+            if (Array.size(arr) >= 2) {
+                switch (Nat.fromText(arr[1])) { case (?n) { m := n }; case null {} };
+            };
+            if (Array.size(arr) >= 3) {
+                switch (Nat.fromText(arr[2])) { case (?n) { d := n }; case null {} };
+            };
+
+            (y, m, d)
+        };
+
+        // Compute aligned starts for month and year (using the approximations above)
+        let (_yNow, mNow, dNow) = ymd(alignedDayNow);
+
+        let daysBeforeInMonth : Nat = if (dNow > 0) dNow - 1 else 0;
+        let alignedMonthStartNow : Int = alignedDayNow - (daysBeforeInMonth * dayInNs);
+
+        let monthsBeforeInYear : Nat = if (mNow > 0) mNow - 1 else 0;
+        let alignedYearStartNow : Int = alignedMonthStartNow - (monthsBeforeInYear * monthInNs);
+
+        if (period == "daily") {
+            // 7 days: 6 days ago → today
+            for (i in Iter.range(0, 6)) {
+                let offset : Int = (6 - i) * dayInNs;
+                let dayStart : Int = alignedDayNow - offset;
+                let dayEnd   : Int = dayStart + dayInNs;
+
+                var revenue : Nat = 0;
+                for ((_, tx) in transactions.entries()) {
+                    switch (plans.get(tx.planId)) {
+                        case (?plan) {
+                            if (plan.creator == creator and tx.txType == #Payment and tx.status == #Confirmed) {
+                                if (tx.timestamp >= dayStart and tx.timestamp < dayEnd) {
+                                    revenue += tx.amount;
+                                };
+                            };
+                        };
+                        case null {};
                     };
                 };
-                case null { };
+
+                let labels = timestampToDateString(dayStart, "day");
+                buffer.add((labels, revenue));
+            };
+        } else if (period == "monthly") {
+            // 6 months: 5 months ago → current month
+            for (i in Iter.range(0, 5)) {
+                let offset : Int = (5 - i) * monthInNs;
+                let monthStart : Int = alignedMonthStartNow - offset;
+                let monthEnd   : Int = monthStart + monthInNs;
+
+                var revenue : Nat = 0;
+                for ((_, tx) in transactions.entries()) {
+                    switch (plans.get(tx.planId)) {
+                        case (?plan) {
+                            if (plan.creator == creator and tx.txType == #Payment and tx.status == #Confirmed) {
+                                if (tx.timestamp >= monthStart and tx.timestamp < monthEnd) {
+                                    revenue += tx.amount;
+                                };
+                            };
+                        };
+                        case null {};
+                    };
+                };
+
+                let labels = timestampToDateString(monthStart, "month");
+                buffer.add((labels, revenue));
+            };
+        } else if (period == "yearly") {
+            // 3 years: 2 years ago → current year
+            for (i in Iter.range(0, 2)) {
+                let offset : Int = (2 - i) * yearInNs;
+                let yearStart : Int = alignedYearStartNow - offset;
+                let yearEnd   : Int = yearStart + yearInNs;
+
+                var revenue : Nat = 0;
+                for ((_, tx) in transactions.entries()) {
+                    switch (plans.get(tx.planId)) {
+                        case (?plan) {
+                            if (plan.creator == creator and tx.txType == #Payment and tx.status == #Confirmed) {
+                                if (tx.timestamp >= yearStart and tx.timestamp < yearEnd) {
+                                    revenue += tx.amount;
+                                };
+                            };
+                        };
+                        case null {};
+                    };
+                };
+
+                let labels = timestampToDateString(yearStart, "year");
+                buffer.add((labels, revenue));
             };
         };
-        
-        // Generate mock data based on period
-        if (period == "daily") {
-            chartData := [("Mon", totalRevenue / 7), ("Tue", totalRevenue / 6), ("Wed", totalRevenue / 8), ("Thu", totalRevenue / 5), ("Fri", totalRevenue / 4), ("Sat", totalRevenue / 9), ("Sun", totalRevenue / 10)];
-        } else if (period == "monthly") {
-            chartData := [("Jan", totalRevenue / 6), ("Feb", totalRevenue / 5), ("Mar", totalRevenue / 7), ("Apr", totalRevenue / 4), ("May", totalRevenue / 3), ("Jun", totalRevenue / 2)];
-        } else {
-            chartData := [("2022", totalRevenue / 3), ("2023", totalRevenue / 2), ("2024", totalRevenue)];
-        };
-        
-        chartData
+
+        Buffer.toArray(buffer)
     };
+
     
     // Retry payment for pending subscription
     public shared(msg) func retryPayment(subscriptionId: Nat): async Bool {
@@ -1608,6 +1828,14 @@ actor SubscriptionManager {
                                 };
                                 transactions.put(nextTransactionId, paymentTx);
                                 nextTransactionId += 1;
+                                
+                                // Trigger webhook for manual payment successful
+                                ignore callWebhook(#PaymentSuccessful, paidSubscription, plan, ?{
+                                    timestamp = currentTime;
+                                    nextPayment = paidSubscription.nextPayment;
+                                    amount = plan.amount;
+                                    status = "confirmed";
+                                });
                                 
                                 true
                             } else { false }
