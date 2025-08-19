@@ -32,7 +32,7 @@ actor PaymentProcessor {
     private func processPayments(): async () {
         Debug.print("Processing automatic payments...");
         
-        let subscriptionManager = actor("by6od-j4aaa-aaaaa-qaadq-cai") : actor {
+        let subscriptionManager = actor("ulvla-h7777-77774-qaacq-cai") : actor {
             processAutomaticPayments: () -> async Nat;
             getOverdueSubscriptionsCount: () -> async Nat;
         };
@@ -52,7 +52,7 @@ actor PaymentProcessor {
     };
     
     public func triggerPaymentProcessing(): async Nat {
-        let subscriptionManager = actor("by6od-j4aaa-aaaaa-qaadq-cai") : actor {
+        let subscriptionManager = actor("ulvla-h7777-77774-qaacq-cai") : actor {
             processAutomaticPayments: () -> async Nat;
         };
         

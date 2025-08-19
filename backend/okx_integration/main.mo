@@ -169,7 +169,5 @@ actor OKXIntegration {
         }
     };
     
-    public query func getSupportedPairs(): async [Text] {
-        ["BTC-USDT", "BTC-USDC", "ETH-USDT", "ETH-BTC"]
-    };
+
 }

@@ -18,7 +18,7 @@ SUBSCRIPTION_MANAGER=$(dfx canister id subscription_manager 2>/dev/null || echo 
 WALLET_MANAGER=$(dfx canister id wallet_manager 2>/dev/null || echo "")
 PAYMENT_PROCESSOR=$(dfx canister id payment_processor 2>/dev/null || echo "")
 OKX_INTEGRATION=$(dfx canister id okx_integration 2>/dev/null || echo "")
-BITCOIN_TESTNET=$(dfx canister id bitcoin_testnet 2>/dev/null || echo "")
+# BITCOIN_TESTNET was removed
 
 if [ -z "$SUBSCRIPTION_MANAGER" ]; then
     echo "❌ subscription_manager canister not found"
@@ -36,7 +36,7 @@ echo "✅ subscription_manager: $SUBSCRIPTION_MANAGER"
 echo "✅ wallet_manager: $WALLET_MANAGER"
 echo "✅ payment_processor: $PAYMENT_PROCESSOR"
 echo "✅ okx_integration: $OKX_INTEGRATION"
-echo "✅ bitcoin_testnet: $BITCOIN_TESTNET"
+# bitcoin_testnet removed
 
 echo ""
 echo "🔧 Registering canisters in subscription_manager..."
@@ -74,22 +74,13 @@ if [ -n "$PAYMENT_PROCESSOR" ]; then
     fi
 fi
 
-# Register bitcoin_testnet
-if [ -n "$BITCOIN_TESTNET" ]; then
-    echo "📝 Registering bitcoin_testnet..."
-    dfx canister call subscription_manager registerCanister "(\"bitcoin_testnet\", principal \"$BITCOIN_TESTNET\")" &> /dev/null
-    if [ $? -eq 0 ]; then
-        echo "✅ bitcoin_testnet registered successfully"
-    else
-        echo "❌ Failed to register bitcoin_testnet"
-    fi
-fi
+# bitcoin_testnet canister was removed
 
 echo ""
 echo "🔍 Verifying registrations..."
 
 # Verify registrations
-for canister in "wallet_manager" "okx_integration" "payment_processor" "bitcoin_testnet"; do
+for canister in "wallet_manager" "okx_integration" "payment_processor"; do
     REGISTERED=$(dfx canister call subscription_manager getCanister "(\"$canister\")" 2>/dev/null | grep -o 'principal "[^"]*"' | sed 's/principal "\(.*\)"/\1/')
     if [ -n "$REGISTERED" ]; then
         echo "✅ $canister: $REGISTERED"

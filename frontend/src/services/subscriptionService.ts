@@ -383,14 +383,12 @@ export class SubscriptionService {
     }
   }
 
-  // Simplified webhook methods - only core functionality for now
+  // Simplified webhook methods - only core functionality
   async getWebhookEvents(authClient: AuthClient, planId: string): Promise<any[]> {
-    // Return empty array for now - method exists in backend but not in simplified interface
     return [];
   }
 
   async getWebhookRetryStats(authClient: AuthClient, planId: string): Promise<any> {
-    // Return default stats for now
     return {
       totalEvents: 0,
       pendingRetries: 0,
@@ -400,28 +398,22 @@ export class SubscriptionService {
     };
   }
 
-
-
   async retryWebhookEvent(authClient: AuthClient, eventId: number): Promise<ApiResult<boolean>> {
-    // Return success for now
     return { ok: true };
   }
 
   async retryFailedWebhooks(authClient: AuthClient): Promise<number> {
-    // Return 0 for now
     return 0;
   }
 
   async getWebhookVerificationInfo(authClient: AuthClient, planId: string): Promise<any> {
-    // Return default verification info
     return {
-      instructions: "Basic webhook verification instructions",
-      exampleSignature: "12345"
+      instructions: "Webhook verification is handled automatically",
+      exampleSignature: "N/A"
     };
   }
 
   async getFilteredWebhookEvents(authClient: AuthClient, planId: string, filters: any): Promise<any[]> {
-    // Return empty array for now
     return [];
   }
 

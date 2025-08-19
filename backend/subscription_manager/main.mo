@@ -558,13 +558,7 @@ actor SubscriptionManager {
         }
     };
     
-    // Get unique account identifier for subscriber
-    public query func getSubscriberAccount(subscriptionId: Nat): async ?Text {
-        switch (subscriptions.get(subscriptionId)) {
-            case null { null };
-            case (?sub) { ?sub.btcAddress };
-        }
-    };
+
     
     public shared(msg) func cancelSubscription(subscriptionId: Nat): async Bool {
         switch (subscriptions.get(subscriptionId)) {
@@ -877,32 +871,7 @@ actor SubscriptionManager {
         signature == expectedSignature
     };
     
-    // Get webhook verification instructions for plan creators
-    public query func getWebhookVerificationInfo(planId: Text): async Result.Result<{instructions: Text; exampleSignature: Text}, Text> {
-        switch (webhookConfigs.get(planId)) {
-            case null { #err(errorToText(#NotFound("No webhook configured for this plan"))) };
-            case (?config) {
-                let examplePayload = "{\"event\":\"subscription.created\",\"subscriptionId\":123}";
-                let exampleSignature = generateHMACSignature(examplePayload, config.secret);
-                
-                let instructions = "To verify webhook authenticity:\\n" #
-                    "1. Extract the 'X-BitSub-Signature' header from the request\\n" #
-                    "2. Compute HMAC-SHA256 of the request body using your webhook secret\\n" #
-                    "3. Compare the computed signature with the header value\\n" #
-                    "4. Reject requests with invalid signatures\\n\\n" #
-                    "Example verification (Node.js):\\n" #
-                    "const signature = req.headers['x-bitsub-signature'];\\n" #
-                    "const payload = JSON.stringify(req.body);\\n" #
-                    "const expected = crypto.createHash('sha256').update(payload + '|SECRET|' + secret).digest('hex');\\n" #
-                    "const isValid = signature === expected;";
-                
-                #ok({
-                    instructions = instructions;
-                    exampleSignature = exampleSignature;
-                })
-            };
-        }
-    };
+
     
     // HTTP Outcall function for sending webhooks
     private func sendWebhook(url: Text, payload: WebhookPayload, secret: Text): async Result.Result<Nat, Text> {
@@ -995,95 +964,7 @@ actor SubscriptionManager {
         "}"
     };
     
-    // Webhook event management
-    // Get webhook events with optional filtering
-    public query func getWebhookEvents(planId: Text): async [WebhookEvent] {
-        let buffer = Buffer.Buffer<WebhookEvent>(0);
-        for ((_, event) in webhookEvents.entries()) {
-            if (event.planId == planId) {
-                buffer.add(event);
-            };
-        };
-        Buffer.toArray(buffer)
-    };
 
-    // Get webhook events filtered by event type
-    public query func getWebhookEventsByType(planId: Text, eventType: WebhookEventType): async [WebhookEvent] {
-        let buffer = Buffer.Buffer<WebhookEvent>(0);
-        for ((_, event) in webhookEvents.entries()) {
-            if (event.planId == planId and event.eventType == eventType) {
-                buffer.add(event);
-            };
-        };
-        Buffer.toArray(buffer)
-    };
-
-    // Get webhook events filtered by status
-    public query func getWebhookEventsByStatus(planId: Text, status: WebhookStatus): async [WebhookEvent] {
-        let buffer = Buffer.Buffer<WebhookEvent>(0);
-        for ((_, event) in webhookEvents.entries()) {
-            if (event.planId == planId and event.status == status) {
-                buffer.add(event);
-            };
-        };
-        Buffer.toArray(buffer)
-    };
-
-    // Get webhook events with advanced filtering
-    public query func getFilteredWebhookEvents(
-        planId: Text, 
-        eventTypes: ?[WebhookEventType], 
-        statuses: ?[WebhookStatus],
-        fromTime: ?Int,
-        toTime: ?Int,
-        limit: ?Nat
-    ): async [WebhookEvent] {
-        let buffer = Buffer.Buffer<WebhookEvent>(0);
-        
-        for ((_, event) in webhookEvents.entries()) {
-            if (event.planId == planId) {
-                // Filter by event types
-                let typeMatch = switch (eventTypes) {
-                    case null { true };
-                    case (?types) {
-                        Array.find<WebhookEventType>(types, func(t) = t == event.eventType) != null
-                    };
-                };
-                
-                // Filter by statuses
-                let statusMatch = switch (statuses) {
-                    case null { true };
-                    case (?stats) {
-                        Array.find<WebhookStatus>(stats, func(s) = s == event.status) != null
-                    };
-                };
-                
-                // Filter by time range
-                let timeMatch = switch (fromTime, toTime) {
-                    case (null, null) { true };
-                    case (?from, null) { event.timestamp >= from };
-                    case (null, ?to) { event.timestamp <= to };
-                    case (?from, ?to) { event.timestamp >= from and event.timestamp <= to };
-                };
-                
-                if (typeMatch and statusMatch and timeMatch) {
-                    buffer.add(event);
-                    
-                    // Apply limit
-                    switch (limit) {
-                        case null { };
-                        case (?maxEvents) {
-                            if (buffer.size() >= maxEvents) {
-                                return Buffer.toArray(buffer);
-                            };
-                        };
-                    };
-                };
-            };
-        };
-        
-        Buffer.toArray(buffer)
-    };
 
     // Get webhook event type breakdown for analytics
     public query func getWebhookEventBreakdown(planId: Text): async [(WebhookEventType, Nat)] {
@@ -1114,144 +995,9 @@ actor SubscriptionManager {
         ]
     };
     
-    // Calculate exponential backoff delay based on retry count
-    private func calculateRetryDelay(retryCount: Nat): Int {
-        // Exponential backoff: 1min, 5min, 15min for attempts 1, 2, 3
-        switch (retryCount) {
-            case 0 { 1 * 60 * 1_000_000_000 }; // 1 minute
-            case 1 { 5 * 60 * 1_000_000_000 }; // 5 minutes
-            case 2 { 15 * 60 * 1_000_000_000 }; // 15 minutes
-            case _ { 30 * 60 * 1_000_000_000 }; // 30 minutes for any higher attempts
-        }
-    };
 
-    public func retryFailedWebhooks(): async Nat {
-        var retriedCount: Nat = 0;
-        let currentTime = Time.now();
-        
-        for ((eventId, event) in webhookEvents.entries()) {
-            // Retry pending webhooks (failed but under retry limit) and some failed ones
-            if ((event.status == #Pending or event.status == #Failed) and event.retryCount < 3) {
-                switch (webhookConfigs.get(event.planId)) {
-                    case (?config) {
-                        if (config.isActive) {
-                            // Calculate retry delay based on attempt count
-                            let retryDelay = calculateRetryDelay(event.retryCount);
-                            
-                            let shouldRetry = switch (event.lastAttempt) {
-                                case null { true };
-                                case (?lastAttempt) {
-                                    currentTime - lastAttempt > retryDelay
-                                };
-                            };
-                            
-                            if (shouldRetry) {
-                                // Find the subscription and plan for this event
-                                switch (subscriptions.get(event.subscriptionId)) {
-                                    case (?subscription) {
-                                        switch (plans.get(event.planId)) {
-                                            case (?plan) {
-                                                // Retry the webhook
-                                                ignore callWebhook(event.eventType, subscription, plan, null);
-                                                retriedCount += 1;
-                                            };
-                                            case null { };
-                                        };
-                                    };
-                                    case null { };
-                                };
-                            };
-                        };
-                    };
-                    case null { };
-                };
-            };
-        };
-        
-        retriedCount
-    };
 
-    // Manual retry for specific webhook event
-    public func retryWebhookEvent(eventId: Nat): async Result.Result<Bool, Text> {
-        switch (webhookEvents.get(eventId)) {
-            case null { #err(errorToText(#NotFound("Webhook event not found"))) };
-            case (?event) {
-                if (event.retryCount >= 5) {
-                    return #err(errorToText(#InvalidInput("Maximum retry attempts exceeded")));
-                };
 
-                switch (webhookConfigs.get(event.planId)) {
-                    case null { #err(errorToText(#NotFound("Webhook configuration not found"))) };
-                    case (?config) {
-                        if (not config.isActive) {
-                            return #err(errorToText(#InvalidInput("Webhook is disabled for this plan")));
-                        };
-
-                        switch (subscriptions.get(event.subscriptionId)) {
-                            case null { #err(errorToText(#NotFound("Subscription not found"))) };
-                            case (?subscription) {
-                                switch (plans.get(event.planId)) {
-                                    case null { #err(errorToText(#NotFound("Plan not found"))) };
-                                    case (?plan) {
-                                        // Reset status to pending for retry
-                                        let updatedEvent = {
-                                            event with 
-                                            status = #Pending;
-                                            errorMessage = null;
-                                        };
-                                        webhookEvents.put(eventId, updatedEvent);
-                                        
-                                        // Retry the webhook
-                                        ignore callWebhook(event.eventType, subscription, plan, null);
-                                        #ok(true)
-                                    };
-                                };
-                            };
-                        };
-                    };
-                };
-            };
-        }
-    };
-
-    // Get webhook retry statistics
-    public query func getWebhookRetryStats(planId: Text): async {
-        totalEvents: Nat;
-        pendingRetries: Nat;
-        failedEvents: Nat;
-        completedEvents: Nat;
-        averageRetryCount: Nat;
-    } {
-        var totalEvents = 0;
-        var pendingRetries = 0;
-        var failedEvents = 0;
-        var completedEvents = 0;
-        var totalRetries = 0;
-
-        for ((_, event) in webhookEvents.entries()) {
-            if (event.planId == planId) {
-                totalEvents += 1;
-                totalRetries += event.retryCount;
-                
-                switch (event.status) {
-                    case (#Pending) { pendingRetries += 1 };
-                    case (#Failed) { failedEvents += 1 };
-                    case (#Sent) { completedEvents += 1 };
-                    case (#Disabled) { }; // Ignore disabled events
-                };
-            };
-        };
-
-        let averageRetryCount = if (totalEvents > 0) { totalRetries / totalEvents } else { 0 };
-
-        {
-            totalEvents = totalEvents;
-            pendingRetries = pendingRetries;
-            failedEvents = failedEvents;
-            completedEvents = completedEvents;
-            averageRetryCount = averageRetryCount;
-        }
-    };
     
     // Analytics Functions
     public query func getCreatorTransactions(creator: Principal): async [Transaction] {
@@ -1505,83 +1251,7 @@ actor SubscriptionManager {
     
 
     
-    // Get creator plan insights
-    public query func getCreatorPlanInsights(creator: Principal): async [{ planId: Text; title: Text; subscribers: Nat; revenue: Nat; growth: Float; churnRate: Float }] {
-        let buffer = Buffer.Buffer<{ planId: Text; title: Text; subscribers: Nat; revenue: Nat; growth: Float; churnRate: Float }>(0);
-        
-        for ((planId, plan) in plans.entries()) {
-            if (plan.creator == creator) {
-                var subscribers: Nat = 0;
-                var revenue: Nat = 0;
-                var lastMonthRevenue: Nat = 0;
-                var cancelledSubscriptions: Nat = 0;
-                var totalSubscriptionsEver: Nat = 0;
-                
-                let now = Time.now();
-                let oneMonthAgo = now - (30 * 24 * 60 * 60 * 1_000_000_000); // 30 days in nanoseconds
-                
-                // Count active subscribers for this plan
-                for ((_, sub) in subscriptions.entries()) {
-                    if (sub.planId == planId and sub.status == #Active) {
-                        subscribers += 1;
-                    };
-                    if (sub.planId == planId and sub.status == #Canceled) {
-                        cancelledSubscriptions += 1;
-                    };
-                    if (sub.planId == planId) {
-                        totalSubscriptionsEver += 1;
-                    };
-                };
-                
-                // Calculate revenue for this plan (current and last month)
-                for ((_, tx) in transactions.entries()) {
-                    if (tx.planId == planId and tx.txType == #Payment and tx.status == #Confirmed) {
-                        revenue += tx.amount;
-                        
-                        // Count revenue from over a month ago for growth calculation
-                        if (tx.timestamp < oneMonthAgo) {
-                            lastMonthRevenue += tx.amount;
-                        };
-                    };
-                };
-                
-                // Calculate growth rate (month-over-month revenue growth)
-                let currentMonthRevenue = if (revenue >= lastMonthRevenue) { revenue - lastMonthRevenue } else { 0 };
-                let growth: Float = if (lastMonthRevenue > 0) {
-                    let growthAmount = if (currentMonthRevenue >= lastMonthRevenue) { 
-                        currentMonthRevenue - lastMonthRevenue 
-                    } else { 
-                        0 
-                    };
-                    Float.fromInt(growthAmount) / Float.fromInt(lastMonthRevenue) * 100.0;
-                } else if (currentMonthRevenue > 0) {
-                    100.0; // If no previous revenue, 100% growth
-                } else {
-                    0.0;
-                };
-                
-                // Calculate churn rate (cancelled / total ever created)
-                let churnRate: Float = if (totalSubscriptionsEver > 0) {
-                    Float.fromInt(cancelledSubscriptions) / Float.fromInt(totalSubscriptionsEver) * 100.0;
-                } else {
-                    0.0;
-                };
-                
-                let insight = {
-                    planId = planId;
-                    title = plan.title;
-                    subscribers = subscribers;
-                    revenue = revenue;
-                    growth = growth;
-                    churnRate = churnRate;
-                };
-                
-                buffer.add(insight);
-            };
-        };
-        
-        Buffer.toArray(buffer)
-    };
+
     
     // Get revenue in USD using OKX price data
     public func getRevenueInUSD(creator: Principal): async Float {
@@ -1846,25 +1516,5 @@ actor SubscriptionManager {
         }
     };
     
-    // Force advance subscription to next payment period (for testing)
-    public func advanceSubscription(subscriptionId: Nat): async Bool {
-        switch (subscriptions.get(subscriptionId)) {
-            case null { false };
-            case (?sub) {
-                switch (plans.get(sub.planId)) {
-                    case null { false };
-                    case (?plan) {
-                        let currentTime = Time.now();
-                        let updatedSub = {
-                            sub with 
-                            lastPayment = ?currentTime;
-                            nextPayment = currentTime + getIntervalNanos(plan.interval);
-                        };
-                        subscriptions.put(subscriptionId, updatedSub);
-                        true
-                    };
-                };
-            };
-        }
-    };
+
 }

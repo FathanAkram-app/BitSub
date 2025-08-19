@@ -15,18 +15,7 @@
       "type": "motoko", 
       "main": "backend/wallet_manager/main.mo"
     },
-    "transaction_log": {
-      "type": "motoko",
-      "main": "backend/transaction_log/main.mo"
-    },
-    "bitcoin_integration": {
-      "type": "motoko",
-      "main": "backend/bitcoin_integration/main.mo"
-    },
-    "bitcoin_testnet": {
-      "type": "motoko",
-      "main": "backend/bitcoin_testnet/main.mo"
-    },
+
     "payment_processor": {
       "type": "motoko",
       "main": "backend/payment_processor/main.mo"
@@ -38,7 +27,7 @@
     "bitsub_frontend": {
       "type": "assets",
       "source": ["frontend/dist"],
-      "dependencies": ["subscription_manager", "wallet_manager", "transaction_log", "bitcoin_integration", "bitcoin_testnet", "payment_processor", "okx_integration"]
+      "dependencies": ["subscription_manager", "wallet_manager", "payment_processor", "okx_integration"]
     }
   },
   "networks": {

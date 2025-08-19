@@ -17,38 +17,28 @@ actor WalletManager {
         #SystemError: Text;
     };
     
-    // Data Types
-    public type BTCAddress = {
-        address: Text;
-        subscriptionId: Nat;
-        isUsed: Bool;
-    };
+
     
     // Stable Storage
     private stable var nextAddressId: Nat = 0;
-    private stable var addressesEntries: [(Nat, BTCAddress)] = [];
     private stable var subscriptionAddressesEntries: [(Nat, Text)] = [];
     private stable var userBalancesEntries: [(Principal, Nat64)] = [];
     
     // Working hashmaps
-    private var addresses = HashMap.HashMap<Nat, BTCAddress>(10, func(a: Nat, b: Nat): Bool { a == b }, Nat32.fromNat);
     private var subscriptionAddresses = HashMap.HashMap<Nat, Text>(10, func(a: Nat, b: Nat): Bool { a == b }, Nat32.fromNat);
     private var userBalances = HashMap.HashMap<Principal, Nat64>(10, Principal.equal, Principal.hash);
     
     // System functions for upgrade persistence
     system func preupgrade() {
-        addressesEntries := Iter.toArray(addresses.entries());
         subscriptionAddressesEntries := Iter.toArray(subscriptionAddresses.entries());
         userBalancesEntries := Iter.toArray(userBalances.entries());
     };
     
     system func postupgrade() {
-        addresses := HashMap.fromIter<Nat, BTCAddress>(addressesEntries.vals(), addressesEntries.size(), func(a: Nat, b: Nat): Bool { a == b }, Nat32.fromNat);
         subscriptionAddresses := HashMap.fromIter<Nat, Text>(subscriptionAddressesEntries.vals(), subscriptionAddressesEntries.size(), func(a: Nat, b: Nat): Bool { a == b }, Nat32.fromNat);
         userBalances := HashMap.fromIter<Principal, Nat64>(userBalancesEntries.vals(), userBalancesEntries.size(), Principal.equal, Principal.hash);
         
         // Clear stable arrays
-        addressesEntries := [];
         subscriptionAddressesEntries := [];
         userBalancesEntries := [];
     };
@@ -97,13 +87,7 @@ actor WalletManager {
                 // Generate mock BTC address (in production, use proper BTC address generation)
                 let btcAddress = "bc1q" # generateRandomString(addressId) # "bitsub" # Nat.toText(subscriptionId);
                 
-                let addressRecord: BTCAddress = {
-                    address = btcAddress;
-                    subscriptionId = subscriptionId;
-                    isUsed = false;
-                };
-                
-                addresses.put(addressId, addressRecord);
+
                 subscriptionAddresses.put(subscriptionId, btcAddress);
                 
                 #ok(btcAddress)
@@ -116,30 +100,7 @@ actor WalletManager {
         subscriptionAddresses.get(subscriptionId)
     };
     
-    // Mark address as used (when payment is received)
-    public func markAddressUsed(subscriptionId: Nat): async Bool {
-        switch (subscriptionAddresses.get(subscriptionId)) {
-            case null { false };
-            case (?_) {
-                // Find and update the address record
-                for ((id, record) in addresses.entries()) {
-                    if (record.subscriptionId == subscriptionId) {
-                        let updatedRecord = {
-                            record with isUsed = true
-                        };
-                        addresses.put(id, updatedRecord);
-                        return true;
-                    };
-                };
-                false
-            };
-        }
-    };
-    
-    // Get all addresses (for monitoring)
-    public query func getAllAddresses(): async [(Nat, BTCAddress)] {
-        Iter.toArray(addresses.entries())
-    };
+
     
     // Wallet Balance Functions
     public query func getBalance(user: Principal): async Nat64 {
