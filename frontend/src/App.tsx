@@ -9,6 +9,9 @@ import { ToastContainer } from './components/ui/Toast';
 import { UserProfile } from './components/UserProfile';
 import { ENV } from './config/env';
 import './App.css';
+import './styles/wallet-balance.css';
+import './styles/page-layouts.css';
+import './styles/midnight-theme.css';
 
 const canisterId = ENV.CANISTER_IDS.SUBSCRIPTION_MANAGER
 const host = ENV.HOST
@@ -76,7 +79,9 @@ function App(): React.ReactElement {
 
 
   async function initAuth(): Promise<void> {
-    const client = await AuthClient.create()
+    const client = await AuthClient.create({
+      identityProvider,
+    })
     const isAuthenticated = await client.isAuthenticated()
     
     setAuthClient(client)
@@ -295,7 +300,7 @@ function App(): React.ReactElement {
 
       {!isAuthenticated ? (
         <>
-          <Header />
+          <Header authClient={authClient} isAuthenticated={isAuthenticated} />
           {loading ? (
             <div className="loading">
               <div className="loading-spinner"></div>
@@ -311,6 +316,7 @@ function App(): React.ReactElement {
             dashboardType={dashboardType}
             onSwitchDashboard={handleSwitchDashboard}
             onLogout={logout}
+            authClient={authClient}
           >
             {/* User Profile in Navigation */}
             <UserProfile authClient={authClient} />

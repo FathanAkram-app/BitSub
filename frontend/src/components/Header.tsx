@@ -1,10 +1,21 @@
 import React from 'react';
+import { AuthClient } from '@dfinity/auth-client';
 
-export default function Header(): React.ReactElement {
+interface HeaderProps {
+  authClient?: AuthClient;
+  isAuthenticated?: boolean;
+}
+
+export default function Header({ authClient, isAuthenticated }: HeaderProps): React.ReactElement {
   return (
     <header className="header">
-      <h1>₿ BitSub</h1>
-      <p>Bitcoin Subscription Platform</p>
+      <div className="header__content">
+        <div className="header__branding">
+          <h1>₿ BitSub</h1>
+          <p>Bitcoin Subscription Platform</p>
+        </div>
+        
+      </div>
     </header>
   );
 }

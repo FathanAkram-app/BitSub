@@ -279,12 +279,17 @@ export default function MarketplacePage({ authClient, onSubscribe }: Marketplace
       {/* Hero Section */}
       <div className="marketplace-hero">
         <div className="hero-content">
-          <div className="hero-badge">🛒 Marketplace</div>
-          <h1 className="hero-title">🚀 Discover Amazing Subscriptions</h1>
-          <p className="hero-subtitle">
-            Browse curated subscription plans from creators worldwide. 
-            Find your next favorite service and subscribe instantly with Bitcoin.
-          </p>
+          <div className="hero-header">
+            <div className="hero-main">
+              <div className="hero-badge">🛒 Marketplace</div>
+              <h1 className="hero-title">🚀 Discover Amazing Subscriptions</h1>
+              <p className="hero-subtitle">
+                Browse curated subscription plans from creators worldwide. 
+                Find your next favorite service and subscribe instantly with Bitcoin.
+              </p>
+            </div>
+            
+          </div>
           
           {/* Quick Stats */}
           <div className="marketplace-stats">

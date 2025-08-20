@@ -1,0 +1,83 @@
+/* Page Layout Styles for Wallet Balance Integration */
+
+/* Creator Dashboard Header */
+.creator-header .header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.creator-header .header-main {
+  flex: 1;
+  min-width: 300px;
+}
+
+.creator-header .header-wallet {
+  flex-shrink: 0;
+}
+
+/* Marketplace Hero Header */
+.marketplace-hero .hero-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.marketplace-hero .hero-main {
+  flex: 1;
+  min-width: 300px;
+}
+
+.marketplace-hero .hero-wallet {
+  flex-shrink: 0;
+}
+
+
+/* Header improvements */
+.header .header__content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+}
+
+.header .header__branding {
+  flex: 1;
+}
+
+.header .header__wallet {
+  flex-shrink: 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .creator-header .header-content,
+  .marketplace-hero .hero-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .creator-header .header-wallet,
+  .marketplace-hero .hero-wallet {
+    align-self: center;
+  }
+  
+  .header .header__content {
+    flex-direction: column;
+    gap: 16px;
+    text-align: center;
+  }
+  
+}
+
+@media (max-width: 480px) {
+  .creator-header .header-content,
+  .marketplace-hero .hero-header {
+    gap: 16px;
+  }
+}

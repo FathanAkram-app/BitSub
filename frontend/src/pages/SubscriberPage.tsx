@@ -6,7 +6,7 @@ import { usePrice } from '../hooks/usePrice';
 import { subscriptionService } from '../services/subscriptionService';
 import { Button, Card, CardContent, Loading, EmptyState, Input } from '../components/ui';
 import { formatSats, getIntervalText, formatDate } from '../utils/helpers';
-import Wallet from '../components/Wallet';
+import { WalletBalance } from '../components/WalletBalance';
 
 interface SubscriberDashboardProps {
   authClient: AuthClient;
@@ -117,10 +117,6 @@ export default function SubscriberDashboard({ authClient, onSwitchToMarketplace 
         </div>
       </div>
 
-      {/* Wallet Section */}
-      <div className="wallet-section">
-        <Wallet authClient={authClient} />
-      </div>
 
       {/* Main Content */}
       <div className="subscriber-content">

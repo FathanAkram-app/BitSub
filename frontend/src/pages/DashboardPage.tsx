@@ -62,6 +62,7 @@ export default function Dashboard({ authClient }: DashboardProps): React.ReactEl
             <h1>📊 Subscription Management</h1>
             <p>Create and manage your subscription plans</p>
           </div>
+          
         </div>
       </div>
 

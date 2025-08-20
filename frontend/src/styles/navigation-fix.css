@@ -1,0 +1,225 @@
+/* Navigation Fixes - Clean and Responsive */
+
+.navigation {
+  background: #fff;
+  border-bottom: 1px solid #e5e7eb;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.nav-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+}
+
+/* Brand section */
+.nav-brand {
+  flex-shrink: 0;
+}
+
+.brand-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: background-color 0.2s;
+  text-decoration: none;
+}
+
+.brand-button:hover {
+  background-color: rgba(247, 147, 26, 0.1);
+}
+
+.bitcoin-icon {
+  color: #f7931a;
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.brand-text {
+  font-size: 18px;
+  font-weight: bold;
+  color: #111827;
+  margin: 0;
+}
+
+.brand-badge {
+  background: #f7931a;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+/* Menu section */
+.nav-menu {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex: 1;
+  justify-content: flex-end;
+}
+
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nav-user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Button styling within nav */
+.nav-actions .btn,
+.nav-user .btn {
+  white-space: nowrap;
+  font-size: 14px;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 6px;
+}
+
+.logout-btn {
+  margin-left: 8px;
+}
+
+/* Mobile Responsive Design */
+@media (max-width: 968px) {
+  .nav-content {
+    padding: 0 12px;
+    height: auto;
+    min-height: 64px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  
+  .nav-brand {
+    order: 1;
+  }
+  
+  .nav-menu {
+    order: 2;
+    width: 100%;
+    justify-content: center;
+    padding: 12px 0;
+    border-top: 1px solid #e5e7eb;
+    margin-top: 12px;
+    gap: 16px;
+  }
+  
+  .nav-actions {
+    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  .nav-user {
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 640px) {
+  .nav-content {
+    padding: 0 8px;
+  }
+  
+  .brand-text {
+    font-size: 16px;
+  }
+  
+  .bitcoin-icon {
+    font-size: 18px;
+  }
+  
+  .nav-actions .btn,
+  .nav-user .btn {
+    font-size: 12px;
+    height: 32px;
+    padding: 0 8px;
+  }
+  
+  .nav-actions {
+    gap: 4px;
+  }
+  
+  .nav-user {
+    gap: 6px;
+  }
+  
+  .nav-menu {
+    gap: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .nav-content {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 12px 8px;
+  }
+  
+  .nav-brand {
+    align-self: center;
+    margin-bottom: 8px;
+  }
+  
+  .nav-menu {
+    flex-direction: column;
+    gap: 12px;
+    border: none;
+    margin: 0;
+    padding: 0;
+  }
+  
+  .nav-actions {
+    justify-content: center;
+    width: 100%;
+  }
+  
+  .nav-user {
+    justify-content: center;
+    width: 100%;
+    padding-top: 8px;
+    border-top: 1px solid #e5e7eb;
+  }
+}
+
+/* Focus states for accessibility */
+.brand-button:focus,
+.nav-actions .btn:focus,
+.nav-user .btn:focus {
+  outline: 2px solid #f7931a;
+  outline-offset: 2px;
+}
+
+/* Hover states */
+.nav-actions .btn:hover,
+.nav-user .btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Active states for dashboard buttons */
+.nav-actions .btn[aria-pressed="true"] {
+  background-color: #f7931a;
+  color: white;
+  box-shadow: 0 2px 4px rgba(247, 147, 26, 0.3);
+}

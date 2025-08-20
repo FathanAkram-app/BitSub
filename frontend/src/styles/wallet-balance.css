@@ -1,0 +1,180 @@
+/* Wallet Balance Component Styles */
+
+.wallet-balance {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: inherit;
+}
+
+/* Legacy header variant - replaced by wallet-balance-compact */
+.wallet-balance--header {
+  display: none; /* Hide old messy version */
+}
+
+/* Card variant - prominent display */
+.wallet-balance--card {
+  background: linear-gradient(135deg, #f7931a 0%, #ff8c00 100%);
+  color: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(247, 147, 26, 0.3);
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+  min-width: 200px;
+}
+
+.wallet-balance--card .wallet-balance__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.wallet-balance--card .wallet-balance__header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.wallet-balance--card .wallet-balance__icon {
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.wallet-balance--card .wallet-balance__amount-large {
+  font-size: 24px;
+  font-weight: bold;
+  text-align: center;
+  margin: 8px 0;
+}
+
+.wallet-balance--card .wallet-balance__usd-large {
+  font-size: 14px;
+  opacity: 0.9;
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.wallet-balance--card .wallet-balance__actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* Inline variant - subtle integration */
+.wallet-balance--inline {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 14px;
+}
+
+.wallet-balance--inline .wallet-balance__label {
+  color: #666;
+  margin-right: 6px;
+}
+
+.wallet-balance--inline .wallet-balance__amount {
+  font-weight: 600;
+  color: #333;
+}
+
+.wallet-balance--inline .wallet-balance__usd {
+  color: #666;
+  margin-left: 6px;
+}
+
+.wallet-balance--inline .wallet-balance__action {
+  margin-left: 8px;
+}
+
+/* Loading state */
+.wallet-balance--loading {
+  opacity: 0.6;
+}
+
+.wallet-balance__loading {
+  font-size: 12px;
+  color: #666;
+  font-style: italic;
+}
+
+/* Deposit Modal - Dark Mode */
+.deposit-modal {
+  padding: 20px 0;
+  background: #1a1a1a;
+  color: #fff;
+}
+
+.deposit-modal .current-balance {
+  background: rgba(247, 147, 26, 0.1);
+  border: 1px solid rgba(247, 147, 26, 0.3);
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 20px;
+  text-align: center;
+  font-weight: 600;
+  color: #f7931a;
+}
+
+.deposit-modal .form-field {
+  margin-bottom: 20px;
+}
+
+.deposit-modal .form-field label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+  color: #ccc;
+}
+
+.deposit-modal .form-field input {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #333;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: border-color 0.2s;
+  background: #2d2d2d;
+  color: #fff;
+}
+
+.deposit-modal .form-field input:focus {
+  outline: none;
+  border-color: #f7931a;
+  background: #333;
+}
+
+.deposit-modal .form-field input::placeholder {
+  color: #888;
+}
+
+.deposit-modal .modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .wallet-balance--header {
+    min-width: 100px;
+    padding: 6px 10px;
+  }
+  
+  .wallet-balance--header .wallet-balance__amount {
+    font-size: 12px;
+  }
+  
+  .wallet-balance--header .wallet-balance__usd {
+    font-size: 10px;
+  }
+  
+  .wallet-balance--card {
+    padding: 16px;
+  }
+  
+  .wallet-balance--card .wallet-balance__amount-large {
+    font-size: 20px;
+  }
+}
