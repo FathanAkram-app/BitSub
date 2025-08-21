@@ -9,7 +9,7 @@ import Blob "mo:base/Blob";
 import Char "mo:base/Char";
 import Cycles "mo:base/ExperimentalCycles";
 
-actor OKXIntegration {
+persistent actor OKXIntegration {
     
     public type PriceData = {
         symbol: Text;
@@ -73,7 +73,7 @@ actor OKXIntegration {
             transform = null;
         };
 
-        Cycles.add(20_949_972_000);
+        Cycles.add<system>(20_949_972_000);
         
         try {
             let ic : actor {

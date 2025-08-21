@@ -7,7 +7,7 @@ import Nat64 "mo:base/Nat64";
 import Result "mo:base/Result";
 import Iter "mo:base/Iter";
 
-actor WalletManager {
+persistent actor WalletManager {
     
     // Error Types
     public type Error = {
@@ -25,8 +25,8 @@ actor WalletManager {
     private stable var userBalancesEntries: [(Principal, Nat64)] = [];
     
     // Working hashmaps
-    private var subscriptionAddresses = HashMap.HashMap<Nat, Text>(10, func(a: Nat, b: Nat): Bool { a == b }, Nat32.fromNat);
-    private var userBalances = HashMap.HashMap<Principal, Nat64>(10, Principal.equal, Principal.hash);
+    private transient var subscriptionAddresses = HashMap.HashMap<Nat, Text>(10, func(a: Nat, b: Nat): Bool { a == b }, Nat32.fromNat);
+    private transient var userBalances = HashMap.HashMap<Principal, Nat64>(10, Principal.equal, Principal.hash);
     
     // System functions for upgrade persistence
     system func preupgrade() {
