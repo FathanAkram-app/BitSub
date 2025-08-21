@@ -1,0 +1,130 @@
+version: '3.8'
+
+services:
+  bitsub:
+    build: .
+    container_name: bitsub-app
+    ports:
+      - "8000:4943"  # DFX local replica (host port 8000 -> container port 4943)
+      - "8080:8080"  # Frontend development server (if needed)
+    volumes:
+      # Mount the project directory for development
+      - .:/home/bitsub/app
+      # Persist DFX state
+      - dfx-data:/home/bitsub/.cache/dfinity
+      - dfx-config:/home/bitsub/.config/dfx
+      # Persist node_modules to avoid reinstalling
+      - node-modules:/home/bitsub/app/frontend/node_modules
+    environment:
+      - DEBIAN_FRONTEND=noninteractive
+      - DFX_NETWORK=local
+      - NODE_ENV=development
+    networks:
+      - bitsub-network
+    restart: unless-stopped
+    # Keep container running for development
+    tty: true
+    stdin_open: true
+    # Override default command for development
+    command: >
+      bash -c "
+        echo '🐳 BitSub Docker Container Starting...' &&
+        echo '📦 Installing frontend dependencies...' &&
+        cd frontend && npm install && cd .. &&
+        echo '🚀 Starting BitSub...' &&
+        DFX_NETWORK=local dfx start --background --clean &&
+        sleep 10 &&
+        dfx deploy &&
+        ./scripts/docker-setup-env.sh &&
+        cd frontend && npm run build && cd .. &&
+        dfx deploy bitsub_frontend &&
+        ./scripts/init-canister-registry.sh &&
+        ./scripts/start-payment-processor.sh &&
+        echo '✅ BitSub is running!' &&
+        echo '' &&
+        echo '🌐 Access BitSub at these URLs:' &&
+        FRONTEND_ID=\$(dfx canister id bitsub_frontend) &&
+        INTERNET_IDENTITY_ID=\$(dfx canister id internet_identity) &&
+        echo '   BitSub App: http://localhost:8000/?canisterId='\$FRONTEND_ID &&
+        echo '   Internet Identity: http://localhost:8000/?canisterId='\$INTERNET_IDENTITY_ID &&
+        echo '' &&
+        echo '⚠️  Do NOT use http://localhost:8000 directly (redirects to IC dashboard)' &&
+        echo '✅ Always use the URLs with canisterId parameter shown above' &&
+        echo '' &&
+        echo '🔧 Container commands:' &&
+        echo '   Get URLs: ./scripts/docker-access.sh' &&
+        echo '   Shell: docker exec -it bitsub-app bash' &&
+        echo '   Logs: docker-compose logs -f' &&
+        tail -f /dev/null
+      "
+
+  # Optional: Separate service for development with hot reload
+  bitsub-dev:
+    build: .
+    container_name: bitsub-dev
+    ports:
+      - "8001:4943"  # Dev instance (host port 8001 -> container port 4943)
+      - "5173:5173"  # Vite dev server
+    volumes:
+      - .:/home/bitsub/app
+      - dfx-dev-data:/home/bitsub/.cache/dfinity
+      - dfx-dev-config:/home/bitsub/.config/dfx
+      - node-modules-dev:/home/bitsub/app/frontend/node_modules
+    environment:
+      - DEBIAN_FRONTEND=noninteractive
+      - DFX_NETWORK=local
+      - NODE_ENV=development
+    networks:
+      - bitsub-network
+    profiles:
+      - dev  # Only start with: docker-compose --profile dev up
+    restart: unless-stopped
+    tty: true
+    stdin_open: true
+    command: >
+      bash -c "
+        echo '🔧 BitSub Development Container Starting...' &&
+        cd frontend && npm install && cd .. &&
+        echo '🚀 Starting DFX in background...' &&
+        DFX_NETWORK=local dfx start --background --clean &&
+        sleep 10 &&
+        echo '🔨 Deploying canisters...' &&
+        dfx deploy &&
+        ./scripts/docker-setup-env.sh &&
+        echo '🏗️ Starting frontend dev server...' &&
+        cd frontend && npm run dev -- --host 0.0.0.0 --port 5173 &
+        echo '✅ Development environment ready!' &&
+        echo '' &&
+        echo '🌐 Access BitSub at these URLs:' &&
+        FRONTEND_ID=\$(dfx canister id bitsub_frontend) &&
+        INTERNET_IDENTITY_ID=\$(dfx canister id internet_identity) &&
+        echo '   Frontend (Hot Reload): http://localhost:5173' &&
+        echo '   BitSub App: http://localhost:8001/?canisterId='\$FRONTEND_ID &&
+        echo '   Internet Identity: http://localhost:8001/?canisterId='\$INTERNET_IDENTITY_ID &&
+        echo '' &&
+        echo '⚠️  Do NOT use http://localhost:8001 directly (redirects to IC dashboard)' &&
+        echo '✅ Always use the URLs with canisterId parameter shown above' &&
+        echo '' &&
+        echo '🔧 Container commands:' &&
+        echo '   Get URLs: ./scripts/docker-access.sh' &&
+        echo '   Shell: docker exec -it bitsub-dev bash' &&
+        tail -f /dev/null
+      "
+
+volumes:
+  dfx-data:
+    driver: local
+  dfx-config:
+    driver: local
+  dfx-dev-data:
+    driver: local
+  dfx-dev-config:
+    driver: local
+  node-modules:
+    driver: local
+  node-modules-dev:
+    driver: local
+
+networks:
+  bitsub-network:
+    driver: bridge

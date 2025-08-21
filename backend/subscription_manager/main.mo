@@ -16,7 +16,7 @@ import Nat8 "mo:base/Nat8";
 import Blob "mo:base/Blob";
 import Debug "mo:base/Debug";
 
-actor SubscriptionManager {
+persistent actor SubscriptionManager {
     
     // Error Types
     public type Error = {
@@ -175,14 +175,14 @@ actor SubscriptionManager {
     private stable var webhookConfigsEntries: [(Text, WebhookConfig)] = [];
     
     // Working hashmaps (rebuilt from stable storage)
-    private var plans = HashMap.HashMap<Text, SubscriptionPlan>(10, Text.equal, Text.hash);
-    private var subscriptions = HashMap.HashMap<Nat, ActiveSubscription>(10, func(a: Nat, b: Nat): Bool { a == b }, Nat32.fromNat);
-    private var creatorPlans = HashMap.HashMap<Principal, [Text]>(10, Principal.equal, Principal.hash);
-    private var userSubscriptions = HashMap.HashMap<Principal, [Nat]>(10, Principal.equal, Principal.hash);
-    private var transactions = HashMap.HashMap<Nat, Transaction>(50, func(a: Nat, b: Nat): Bool { a == b }, Nat32.fromNat);
-    private var canisterRegistry = HashMap.HashMap<Text, Principal>(10, Text.equal, Text.hash);
-    private var webhookEvents = HashMap.HashMap<Nat, WebhookEvent>(50, func(a: Nat, b: Nat): Bool { a == b }, Nat32.fromNat);
-    private var webhookConfigs = HashMap.HashMap<Text, WebhookConfig>(10, Text.equal, Text.hash);
+    private transient var plans = HashMap.HashMap<Text, SubscriptionPlan>(10, Text.equal, Text.hash);
+    private transient var subscriptions = HashMap.HashMap<Nat, ActiveSubscription>(10, func(a: Nat, b: Nat): Bool { a == b }, Nat32.fromNat);
+    private transient var creatorPlans = HashMap.HashMap<Principal, [Text]>(10, Principal.equal, Principal.hash);
+    private transient var userSubscriptions = HashMap.HashMap<Principal, [Nat]>(10, Principal.equal, Principal.hash);
+    private transient var transactions = HashMap.HashMap<Nat, Transaction>(50, func(a: Nat, b: Nat): Bool { a == b }, Nat32.fromNat);
+    private transient var canisterRegistry = HashMap.HashMap<Text, Principal>(10, Text.equal, Text.hash);
+    private transient var webhookEvents = HashMap.HashMap<Nat, WebhookEvent>(50, func(a: Nat, b: Nat): Bool { a == b }, Nat32.fromNat);
+    private transient var webhookConfigs = HashMap.HashMap<Text, WebhookConfig>(10, Text.equal, Text.hash);
     
     // System functions for upgrade persistence
     system func preupgrade() {

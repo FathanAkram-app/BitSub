@@ -9,7 +9,7 @@ import Blob "mo:base/Blob";
 import Char "mo:base/Char";
 import Cycles "mo:base/ExperimentalCycles";
 
-actor OKXIntegration {
+persistent actor OKXIntegration {
     
     public type PriceData = {
         symbol: Text;

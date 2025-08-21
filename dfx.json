@@ -32,14 +32,14 @@
   },
   "networks": {
     "local": {
-      "bind": "127.0.0.1:4943",
+      "bind": "0.0.0.0:4943",
       "type": "ephemeral",
       "replica": {
         "subnet_type": "system",
         "max_ingress_message_size": 6291456
       },
       "bootstrap": {
-        "ip": "127.0.0.1",
+        "ip": "0.0.0.0",
         "port": 4943
       }
     },

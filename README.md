@@ -182,13 +182,60 @@ https://your-service.com/api/webhooks/bitsub-payment
 
 ## 🚀 Quick Start
 
+### Option 1: Docker (Recommended)
 ```bash
+# One-command Docker setup
+docker-compose up --build
+
+# Wait for "✅ BitSub ready!" then use the URLs shown in output
+# DO NOT use http://localhost:8000 directly (redirects to IC dashboard)
+```
+
+### Option 2: Local Development
+```bash
+# Prerequisites: Install DFX
+sh -ci "$(curl -fsSL https://internetcomputer.org/install.sh)"
+
 # One-command setup (auto-configures everything)
 ./scripts/auto-deploy.sh
 
 # Opens automatically or visit:
 # http://127.0.0.1:4943/?canisterId=be2us-64aaa-aaaaa-qaabq-cai
 ```
+
+## 🐳 Docker Setup
+
+BitSub includes full Docker support for easy deployment and development.
+
+### Quick Docker Start
+```bash
+# Production-like environment
+docker-compose up --build
+
+# Development with hot reload
+docker-compose --profile dev up --build
+```
+
+### Docker Helper Commands
+```bash
+# Make helper executable
+chmod +x scripts/docker-dev.sh
+
+# Common operations
+./scripts/docker-dev.sh start      # Start container
+./scripts/docker-dev.sh start-dev  # Development mode
+./scripts/docker-dev.sh logs       # View logs
+./scripts/docker-dev.sh shell      # Access container
+./scripts/docker-dev.sh stop       # Stop containers
+```
+
+### Docker Features
+- **Automated Setup**: DFX, Node.js, and all dependencies pre-installed
+- **Persistent Storage**: DFX state and node_modules preserved
+- **Development Mode**: Hot reload for frontend development
+- **Production Ready**: Complete BitSub environment in one container
+
+For detailed Docker documentation, see `DOCKER_SETUP.md`.
 
 ## ⚠️ Troubleshooting
 

@@ -4,7 +4,7 @@ import Timer "mo:base/Timer";
 import Debug "mo:base/Debug";
 import Nat "mo:base/Nat";
 
-actor PaymentProcessor {
+persistent actor PaymentProcessor {
     
     private var paymentTimer: ?Timer.TimerId = null;
     
