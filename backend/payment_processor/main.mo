@@ -4,15 +4,15 @@ import Timer "mo:base/Timer";
 import Debug "mo:base/Debug";
 import Nat "mo:base/Nat";
 
-actor PaymentProcessor {
+persistent actor PaymentProcessor {
     
-    private var paymentTimer: ?Timer.TimerId = null;
+    private transient var paymentTimer: ?Timer.TimerId = null;
     
     public func startPaymentProcessor(): async () {
         switch (paymentTimer) {
             case (?_) { };
             case null {
-                paymentTimer := ?Timer.setTimer(#seconds(60), processPayments);
+                paymentTimer := ?Timer.setTimer<system>(#seconds(60), processPayments);
                 Debug.print("Payment processor started");
             };
         }
@@ -47,7 +47,7 @@ actor PaymentProcessor {
             Debug.print("Error processing payments");
         };
         
-        paymentTimer := ?Timer.setTimer(#seconds(60), processPayments);
+        paymentTimer := ?Timer.setTimer<system>(#seconds(60), processPayments);
         Debug.print("Payment processor started");
     };
     
