@@ -41,31 +41,35 @@ module {
     func convertBits(data : [Nat8], fromBits : Nat, toBits : Nat, pad : Bool) : [Nat8] {
         var acc : Nat64 = 0;
         var bits : Nat = 0;
-        let maxv : Nat64 = ((1 : Nat64) << toBits) - 1;
-        let maxInput : Nat64 = (1 : Nat64) << fromBits;
+        let toBits64 = Nat64.fromNat(toBits);
+        let fromBits64 = Nat64.fromNat(fromBits);
+        let maxv : Nat64 = ((1 : Nat64) << toBits64) - (1 : Nat64);
+        let maxInput : Nat64 = (1 : Nat64) << fromBits64;
         let result = Buffer.Buffer<Nat8>(data.size() * fromBits / toBits + 1);
 
         for (value in data.vals()) {
             let v = Nat64.fromNat(Nat8.toNat(value));
             assert (v < maxInput);
-            acc := (acc << fromBits) | v;
+            acc := (acc << fromBits64) | v;
             bits += fromBits;
 
             while (bits >= toBits) {
                 bits -= toBits;
-                let out = (acc >> bits) & maxv;
+                let out = (acc >> Nat64.fromNat(bits)) & maxv;
                 result.add(Nat8.fromNat(Nat64.toNat(out)));
             };
         };
 
         if (pad) {
             if (bits > 0) {
-                let out = (acc << (toBits - bits)) & maxv;
+                let rem = toBits - bits;
+                let out = (acc << Nat64.fromNat(rem)) & maxv;
                 result.add(Nat8.fromNat(Nat64.toNat(out)));
             };
         } else {
             assert (bits < fromBits);
-            assert (((acc << (toBits - bits)) & maxv) == 0);
+            let rem = toBits - bits;
+            assert (((acc << Nat64.fromNat(rem)) & maxv) == 0);
         };
 
         Buffer.toArray(result);
@@ -122,7 +126,8 @@ module {
             var i : Nat = 0;
             while (i < 8) {
                 let shift = 8 * (7 - i);
-                let byte = Nat8.fromNat(Nat64.toNat((bitLen >> shift) & mask));
+                let shift64 = Nat64.fromNat(shift);
+                let byte = Nat8.fromNat(Nat64.toNat((bitLen >> shift64) & mask));
                 buffer.add(byte);
                 i += 1;
             };
@@ -135,10 +140,9 @@ module {
             if (s == 0) {
                 value
             } else {
-                let leftAmount32 = Nat32.fromNat(32);
                 let s32 = Nat32.fromNat(s);
-                let rightAmount = Nat32.toNat(leftAmount32 - s32);
-                (value >> s) | (value << rightAmount)
+                let rightAmount = (Nat32.fromNat(32)) - s32;
+                (value >> s32) | (value << rightAmount)
             };
         };
 
@@ -148,13 +152,13 @@ module {
             let b1 = Nat32.fromNat(Nat8.toNat(data[base + 1]));
             let b2 = Nat32.fromNat(Nat8.toNat(data[base + 2]));
             let b3 = Nat32.fromNat(Nat8.toNat(data[base + 3]));
-            (b0 << 24) | (b1 << 16) | (b2 << 8) | b3;
+            (b0 << (24 : Nat32)) | (b1 << (16 : Nat32)) | (b2 << (8 : Nat32)) | b3;
         };
 
         func byteAt(value : Nat32, index : Nat) : Nat8 {
             let shift = 8 * (3 - index);
             let mask : Nat32 = 0xff : Nat32;
-            let shifted = (value >> shift) & mask;
+            let shifted = (value >> Nat32.fromNat(shift)) & mask;
             Nat8.fromNat(Nat32.toNat(shifted));
         };
 
@@ -168,7 +172,7 @@ module {
 
             var offset : Nat = 0;
             while (offset < padded.size()) {
-                let w = Array.init<Nat32>(64, 0 : Nat32);
+                let w : [var Nat32] = Array.init<Nat32>(64, 0 : Nat32);
                 let chunkIndex = offset / 4;
                 var i : Nat = 0;
                 while (i < 16) {
@@ -178,8 +182,8 @@ module {
 
                 i := 16;
                 while (i < 64) {
-                    let s0 = rotr(w[i - 15], 7) ^ rotr(w[i - 15], 18) ^ (w[i - 15] >> 3);
-                    let s1 = rotr(w[i - 2], 17) ^ rotr(w[i - 2], 19) ^ (w[i - 2] >> 10);
+                    let s0 = rotr(w[i - 15], 7) ^ rotr(w[i - 15], 18) ^ (w[i - 15] >> (3 : Nat32));
+                    let s1 = rotr(w[i - 2], 17) ^ rotr(w[i - 2], 19) ^ (w[i - 2] >> (10 : Nat32));
                     w[i] := w[i - 16] + s0 + w[i - 7] + s1;
                     i += 1;
                 };
@@ -316,7 +320,8 @@ module {
             var i : Nat = 0;
             while (i < 8) {
                 let shift = 8 * i;
-                let byte = Nat8.fromNat(Nat64.toNat((bitLen >> shift) & mask));
+                let shift64 = Nat64.fromNat(shift);
+                let byte = Nat8.fromNat(Nat64.toNat((bitLen >> shift64) & mask));
                 buffer.add(byte);
                 i += 1;
             };
@@ -330,8 +335,8 @@ module {
                 value
             } else {
                 let s32 = Nat32.fromNat(s);
-                let rightAmount = Nat32.toNat(Nat32.fromNat(32) - s32);
-                (value << s) | (value >> rightAmount)
+                let rightAmount = (Nat32.fromNat(32)) - s32;
+                (value << s32) | (value >> rightAmount)
             };
         };
 
@@ -387,16 +392,16 @@ module {
             let b1 = Nat32.fromNat(Nat8.toNat(data[base + 1]));
             let b2 = Nat32.fromNat(Nat8.toNat(data[base + 2]));
             let b3 = Nat32.fromNat(Nat8.toNat(data[base + 3]));
-            b0 | (b1 << 8) | (b2 << 16) | (b3 << 24);
+            b0 | (b1 << (8 : Nat32)) | (b2 << (16 : Nat32)) | (b3 << (24 : Nat32));
         };
 
         func toBytes(value : Nat32) : [Nat8] {
             let mask : Nat32 = 0xff : Nat32;
             [
                 Nat8.fromNat(Nat32.toNat(value & mask)),
-                Nat8.fromNat(Nat32.toNat((value >> 8) & mask)),
-                Nat8.fromNat(Nat32.toNat((value >> 16) & mask)),
-                Nat8.fromNat(Nat32.toNat((value >> 24) & mask)),
+                Nat8.fromNat(Nat32.toNat((value >> (8 : Nat32)) & mask)),
+                Nat8.fromNat(Nat32.toNat((value >> (16 : Nat32)) & mask)),
+                Nat8.fromNat(Nat32.toNat((value >> (24 : Nat32)) & mask)),
             ];
         };
 
@@ -406,7 +411,7 @@ module {
 
             var offset : Nat = 0;
             while (offset < padded.size()) {
-                var w = Array.init<Nat32>(16, 0 : Nat32);
+                var w : [var Nat32] = Array.init<Nat32>(16, 0 : Nat32);
                 let chunkIndex = offset / 4;
                 var i : Nat = 0;
                 while (i < 16) {
@@ -493,7 +498,7 @@ module {
             let buf = Buffer.Buffer<Nat8>(chars.size() * 2 + 1);
             for (c in chars.vals()) {
                 let code = Char.toNat32(c);
-                buf.add(Nat8.fromNat(Nat32.toNat(code >> 5)));
+                buf.add(Nat8.fromNat(Nat32.toNat(code >> (5 : Nat32))));
             };
             buf.add(0 : Nat8);
             for (c in chars.vals()) {
@@ -506,11 +511,11 @@ module {
         func polymod(values : [Nat8]) : Nat64 {
             var chk : Nat64 = 1;
             for (v in values.vals()) {
-                let top : Nat64 = chk >> 25;
-                chk := ((chk & 0x1ff_ffff : Nat64) << 5) ^ Nat64.fromNat(Nat8.toNat(v));
+                let top : Nat64 = chk >> (25 : Nat64);
+                chk := ((chk & (0x1ff_ffff : Nat64)) << (5 : Nat64)) ^ Nat64.fromNat(Nat8.toNat(v));
                 var i : Nat = 0;
                 while (i < generator.size()) {
-                    if (((top >> i) & (1 : Nat64)) == (1 : Nat64)) {
+                    if (((top >> Nat64.fromNat(i)) & (1 : Nat64)) == (1 : Nat64)) {
                         chk ^= generator[i];
                     };
                     i += 1;
@@ -525,7 +530,8 @@ module {
             let pm : Nat64 = polymod(values) ^ (1 : Nat64);
             Array.tabulate<Nat8>(6, func(i : Nat) : Nat8 {
                 let shift = 5 * (5 - i);
-                Nat8.fromNat(Nat64.toNat((pm >> shift) & (0x1f : Nat64)));
+                let shift64 = Nat64.fromNat(shift);
+                Nat8.fromNat(Nat64.toNat((pm >> shift64) & (0x1f : Nat64)));
             });
         };
 
