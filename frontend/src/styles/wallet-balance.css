@@ -88,6 +88,17 @@
   margin-left: 8px;
 }
 
+.wallet-balance__note {
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.6);
+  margin-top: 12px;
+  line-height: 1.4;
+}
+
+.wallet-balance--card .wallet-balance__note {
+  color: rgba(255, 255, 255, 0.85);
+}
+
 /* Loading state */
 .wallet-balance--loading {
   opacity: 0.6;

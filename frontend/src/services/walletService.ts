@@ -6,11 +6,20 @@ type GenerateAddressResult = { ok: string } | { err: string };
 
 const idlFactory = ({ IDL }: { IDL: any }) => {
   return IDL.Service({
+    'generateAddress': IDL.Func(
+      [IDL.Nat, IDL.Principal],
+      [IDL.Variant({ 'ok': IDL.Text, 'err': IDL.Text })],
+      []
+    ),
+    'getAvailableBalance': IDL.Func([IDL.Nat], [IDL.Opt(IDL.Nat64)], ['query']),
     'getBalance': IDL.Func([IDL.Principal], [IDL.Nat64], ['query']),
-    'deposit': IDL.Func([IDL.Principal, IDL.Nat64], [IDL.Bool], []),
-    'withdraw': IDL.Func([IDL.Principal, IDL.Nat64], [IDL.Bool], []),
-    'generateAddress': IDL.Func([IDL.Nat], [IDL.Variant({ 'ok': IDL.Text, 'err': IDL.Text })], []),
     'getSubscriptionAddress': IDL.Func([IDL.Nat], [IDL.Opt(IDL.Text)], ['query']),
+    'refreshUserBalance': IDL.Func([IDL.Principal], [IDL.Nat64], []),
+    'syncSubscriptionBalance': IDL.Func(
+      [IDL.Nat],
+      [IDL.Variant({ 'ok': IDL.Nat64, 'err': IDL.Text })],
+      []
+    ),
   });
 };
 
@@ -32,21 +41,20 @@ export class WalletService {
     return Number(balance);
   }
 
-  async deposit(authClient: AuthClient, amount: number): Promise<boolean> {
+  async refreshBalance(authClient: AuthClient): Promise<number> {
     const actor = await this.getActor(authClient);
     const identity = authClient.getIdentity();
-    return actor.deposit(identity.getPrincipal(), BigInt(amount));
-  }
-
-  async withdraw(authClient: AuthClient, amount: number): Promise<boolean> {
-    const actor = await this.getActor(authClient);
-    const identity = authClient.getIdentity();
-    return actor.withdraw(identity.getPrincipal(), BigInt(amount));
+    const refreshed = await actor.refreshUserBalance(identity.getPrincipal());
+    return Number(refreshed);
   }
 
   async generateAddress(authClient: AuthClient, subscriptionId: number): Promise<string> {
     const actor = await this.getActor(authClient);
-    const result: GenerateAddressResult = await actor.generateAddress(subscriptionId);
+    const identity = authClient.getIdentity();
+    const result: GenerateAddressResult = await actor.generateAddress(
+      subscriptionId,
+      identity.getPrincipal()
+    );
     if ('ok' in result) {
       return result.ok;
     }

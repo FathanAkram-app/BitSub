@@ -5,10 +5,12 @@ A decentralized subscription platform built on the Internet Computer, enabling B
 ## 🚀 Features
 
 ### 💰 Wallet System
-- **Integrated Wallet** - Built-in Bitcoin testnet wallet for users
+- **Integrated Wallet** - Built-in Bitcoin mainnet wallet for users via the Internet Computer's Bitcoin API
 - **Automatic Payments** - Subscriptions auto-pay from wallet balance
 - **Real Balance Tracking** - Live wallet balance updates
-- **Instant Transactions** - No waiting for Bitcoin confirmations
+- **Confirmation Tracking** - Wallets refresh automatically once mainnet transactions confirm
+- **Deterministic Addresses** - Subscription-specific P2WPKH addresses derived through the IC ECDSA API
+- **On-Chain Settlement** - Automatic debits rely on confirmed Bitcoin balances; sweep funds by crafting mainnet transactions signed with the IC ECDSA key
 
 ### 📊 Analytics & Insights
 - **Interactive Charts** - Daily, Monthly, Yearly revenue visualization
@@ -45,7 +47,6 @@ BitSub-api/
 │   ├── wallet_manager/        # Bitcoin wallet management
 │   ├── transaction_log/       # Payment tracking
 │   ├── bitcoin_integration/   # Bitcoin network integration
-│   ├── bitcoin_testnet/      # Testnet utilities
 │   └── payment_processor/    # Automatic payment processing
 ├── frontend/                  # React application
 │   ├── src/
@@ -126,7 +127,7 @@ https://your-service.com/api/webhooks/bitsub-payment
 ### For Subscribers
 1. **Login** with Internet Identity
 2. **Choose** "Subscriber Dashboard"
-3. **Add Funds** - Deposit Bitcoin testnet to wallet
+3. **Fund Subscription** - Send Bitcoin to the unique mainnet address shown for each subscription
 4. **Find Plans** - Enter plan ID from creator
 5. **Subscribe** - Automatic payment from wallet balance
 6. **Monitor Status** - View payment status and next due date
@@ -149,7 +150,6 @@ https://your-service.com/api/webhooks/bitsub-payment
 - `wallet_manager` - avqkn-guaaa-aaaaa-qaaea-cai
 - `transaction_log` - by6od-j4aaa-aaaaa-qaadq-cai
 - `bitcoin_integration` - bkyz2-fmaaa-aaaaa-qaaaq-cai
-- `bitcoin_testnet` - bd3sg-teaaa-aaaaa-qaaba-cai
 - `payment_processor` - bw4dl-smaaa-aaaaa-qaacq-cai
 - `okx_integration` - br5f7-7uaaa-aaaaa-qaaca-cai
 - `bitsub_frontend` - be2us-64aaa-aaaaa-qaabq-cai
@@ -159,7 +159,7 @@ https://your-service.com/api/webhooks/bitsub-payment
 
 ### Backend Canisters
 - **SubscriptionManager** - Plan creation, subscription management, analytics
-- **WalletManager** - Bitcoin testnet wallet, balance management
+- **WalletManager** - Bitcoin mainnet wallet, balance management
 - **PaymentProcessor** - Automatic recurring payment processing
 - **TransactionLog** - Payment history and transaction tracking
 - **BitcoinIntegration** - Bitcoin network communication
@@ -169,13 +169,13 @@ https://your-service.com/api/webhooks/bitsub-payment
 - **SubscriberDashboard** - Subscription management and wallet
 - **TransactionHistory** - Interactive revenue charts and payment history
 - **CreatorInsights** - Plan performance and growth metrics
-- **WalletBalance** - Bitcoin testnet wallet management
+- **WalletBalance** - Bitcoin wallet management
 - **PaymentProcessor** - Background payment automation status
 
 ### Features
 - **Real-time Analytics** - Live charts with daily/monthly/yearly views
 - **Automatic Payments** - Background processing of recurring subscriptions
-- **Wallet Integration** - Built-in Bitcoin testnet wallet system
+- **Wallet Integration** - Built-in Bitcoin mainnet wallet system
 - **Payment Status** - Visual indicators for subscription payment status
 - **Plan Management** - Complete CRUD operations for subscription plans
 - **Transaction Tracking** - Comprehensive payment and subscription logging
@@ -235,7 +235,9 @@ dfx canister call subscription_manager registerCanister '("wallet_manager", prin
 2. **Login** with Internet Identity (mainnet)
 3. **Choose Dashboard**: Creator or Subscriber
 4. **Create Plans** as creator (e.g., "Premium Plan", 50000 sats/month)
-5. **Add Testnet Funds** to wallet (100000+ sats recommended)
+5. **Fund Subscription Address** with BTC (100000+ sats recommended for testing)
+   - On mainnet deployments, send BTC to the subscription address provided after subscribing
+   - When running locally, you can point the Bitcoin canister to testnet/regtest for safe testing
 6. **Subscribe** to plans using plan IDs
 7. **View Analytics** - Charts update with real payment data
 8. **Test Automation** - Payment processor handles recurring payments

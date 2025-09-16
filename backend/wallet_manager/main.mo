@@ -6,154 +6,182 @@ import Nat32 "mo:base/Nat32";
 import Nat64 "mo:base/Nat64";
 import Result "mo:base/Result";
 import Iter "mo:base/Iter";
+import Time "mo:base/Time";
+import BitcoinIntegration "canister:bitcoin_integration";
 
 persistent actor WalletManager {
-    
-    // Error Types
-    public type Error = {
-        #InvalidInput: Text;
-        #InsufficientBalance: Text;
-        #NotFound: Text;
-        #SystemError: Text;
-    };
-    
 
-    
-    // Stable Storage
-    private stable var nextAddressId: Nat = 0;
-    private stable var subscriptionAddressesEntries: [(Nat, Text)] = [];
-    private stable var userBalancesEntries: [(Principal, Nat64)] = [];
-    
-    // Working hashmaps
-    private transient var subscriptionAddresses = HashMap.HashMap<Nat, Text>(10, func(a: Nat, b: Nat): Bool { a == b }, Nat32.fromNat);
-    private transient var userBalances = HashMap.HashMap<Principal, Nat64>(10, Principal.equal, Principal.hash);
-    
-    // System functions for upgrade persistence
+    public type SubscriptionLedger = {
+        subscriber: Principal;
+        address: Text;
+        lastSyncedBalance: Nat64;
+        consumedBalance: Nat64;
+        lastSyncedAt: Int;
+    };
+
+    private let MAX_BALANCE_NAT: Nat = 18_446_744_073_709_551_615;
+
+    private stable var subscriptionLedgersEntries: [(Nat, SubscriptionLedger)] = [];
+
+    private transient var subscriptionLedgers = HashMap.HashMap<Nat, SubscriptionLedger>(
+        10,
+        func(a: Nat, b: Nat): Bool { a == b },
+        Nat32.fromNat
+    );
+
     system func preupgrade() {
-        subscriptionAddressesEntries := Iter.toArray(subscriptionAddresses.entries());
-        userBalancesEntries := Iter.toArray(userBalances.entries());
+        subscriptionLedgersEntries := Iter.toArray(subscriptionLedgers.entries());
     };
-    
+
     system func postupgrade() {
-        subscriptionAddresses := HashMap.fromIter<Nat, Text>(subscriptionAddressesEntries.vals(), subscriptionAddressesEntries.size(), func(a: Nat, b: Nat): Bool { a == b }, Nat32.fromNat);
-        userBalances := HashMap.fromIter<Principal, Nat64>(userBalancesEntries.vals(), userBalancesEntries.size(), Principal.equal, Principal.hash);
-        
-        // Clear stable arrays
-        subscriptionAddressesEntries := [];
-        userBalancesEntries := [];
+        subscriptionLedgers := HashMap.fromIter<Nat, SubscriptionLedger>(
+            subscriptionLedgersEntries.vals(),
+            subscriptionLedgersEntries.size(),
+            func(a: Nat, b: Nat): Bool { a == b },
+            Nat32.fromNat
+        );
+
+        subscriptionLedgersEntries := [];
     };
-    
-    // Input validation
-    private func validateSubscriptionId(subscriptionId: Nat): Result.Result<(), Error> {
+
+    private func safeAddNat64(a: Nat64, b: Nat64): Nat64 {
+        let totalNat = Nat64.toNat(a) + Nat64.toNat(b);
+        if (totalNat >= MAX_BALANCE_NAT) {
+            Nat64.fromNat(MAX_BALANCE_NAT)
+        } else {
+            Nat64.fromNat(totalNat)
+        }
+    };
+
+    private func availableBalance(ledger: SubscriptionLedger): Nat64 {
+        if (ledger.lastSyncedBalance <= ledger.consumedBalance) {
+            0
+        } else {
+            ledger.lastSyncedBalance - ledger.consumedBalance
+        }
+    };
+
+    public func generateAddress(subscriptionId: Nat, subscriber: Principal): async Result.Result<Text, Text> {
         if (subscriptionId == 0) {
-            #err(#InvalidInput("Subscription ID must be greater than 0"))
-        } else {
-            #ok(())
-        }
-    };
-    
-    private func validateAmount(amount: Nat64): Result.Result<(), Error> {
-        if (amount == 0) {
-            #err(#InvalidInput("Amount must be greater than 0"))
-        } else if (amount > 2_100_000_000_000_000) {
-            #err(#InvalidInput("Amount exceeds maximum allowed"))
-        } else {
-            #ok(())
-        }
-    };
-    
-    // Generate unique BTC address for subscription
-    public func generateAddress(subscriptionId: Nat): async Result.Result<Text, Text> {
-        // Validate input
-        switch (validateSubscriptionId(subscriptionId)) {
-            case (#err(error)) { 
-                return #err(switch (error) {
-                    case (#InvalidInput(msg)) { "Invalid input: " # msg };
-                    case (#InsufficientBalance(msg)) { "Insufficient balance: " # msg };
-                    case (#NotFound(msg)) { "Not found: " # msg };
-                    case (#SystemError(msg)) { "System error: " # msg };
-                })
-            };
-            case (#ok()) { };
+            return #err("Subscription ID must be greater than 0");
         };
-        
-        // Check if address already exists for this subscription
-        switch (subscriptionAddresses.get(subscriptionId)) {
-            case (?existing) { #ok(existing) };
+
+        switch (subscriptionLedgers.get(subscriptionId)) {
+            case (?ledger) {
+                if (ledger.subscriber != subscriber) {
+                    #err("Subscription already associated with a different subscriber")
+                } else {
+                    #ok(ledger.address)
+                }
+            };
             case null {
-                let addressId = nextAddressId;
-                nextAddressId += 1;
-                
-                // Generate mock BTC address (in production, use proper BTC address generation)
-                let btcAddress = "bc1q" # generateRandomString(addressId) # "bitsub" # Nat.toText(subscriptionId);
-                
-
-                subscriptionAddresses.put(subscriptionId, btcAddress);
-                
-                #ok(btcAddress)
+                try {
+                    let address = await BitcoinIntegration.generateAddress(subscriptionId);
+                    let ledger: SubscriptionLedger = {
+                        subscriber = subscriber;
+                        address = address;
+                        lastSyncedBalance = 0;
+                        consumedBalance = 0;
+                        lastSyncedAt = Time.now();
+                    };
+                    subscriptionLedgers.put(subscriptionId, ledger);
+                    #ok(address)
+                } catch (_) {
+                    #err("Failed to derive Bitcoin address")
+                }
             };
         }
     };
-    
-    // Get address for subscription
-    public query func getSubscriptionAddress(subscriptionId: Nat): async ?Text {
-        subscriptionAddresses.get(subscriptionId)
-    };
-    
 
-    
-    // Wallet Balance Functions
+    public query func getSubscriptionAddress(subscriptionId: Nat): async ?Text {
+        switch (subscriptionLedgers.get(subscriptionId)) {
+            case (?ledger) { ?ledger.address };
+            case null { null };
+        }
+    };
+
+    public func syncSubscriptionBalance(subscriptionId: Nat): async Result.Result<Nat64, Text> {
+        switch (subscriptionLedgers.get(subscriptionId)) {
+            case (?ledger) {
+                try {
+                    let balance = await BitcoinIntegration.getBalance(ledger.address);
+                    let updatedLedger: SubscriptionLedger = {
+                        ledger with
+                        lastSyncedBalance = balance;
+                        lastSyncedAt = Time.now();
+                    };
+                    subscriptionLedgers.put(subscriptionId, updatedLedger);
+                    #ok(balance)
+                } catch (_) {
+                    #err("Unable to fetch Bitcoin balance")
+                }
+            };
+            case null { #err("Subscription not registered") };
+        }
+    };
+
+    public query func getAvailableBalance(subscriptionId: Nat): async ?Nat64 {
+        switch (subscriptionLedgers.get(subscriptionId)) {
+            case (?ledger) { ?availableBalance(ledger) };
+            case null { null };
+        }
+    };
+
+    public func consumeBalance(subscriptionId: Nat, amount: Nat64): async Result.Result<(), Text> {
+        if (amount == 0) {
+            return #ok(());
+        };
+
+        switch (subscriptionLedgers.get(subscriptionId)) {
+            case (?ledger) {
+                let available = availableBalance(ledger);
+                if (available < amount) {
+                    #err("Insufficient balance")
+                } else {
+                    let updatedLedger: SubscriptionLedger = {
+                        ledger with
+                        consumedBalance = ledger.consumedBalance + amount;
+                    };
+                    subscriptionLedgers.put(subscriptionId, updatedLedger);
+                    #ok(())
+                }
+            };
+            case null { #err("Subscription not registered") };
+        }
+    };
+
+    public func refreshUserBalance(user: Principal): async Nat64 {
+        var total: Nat64 = 0;
+
+        for ((subscriptionId, ledger) in subscriptionLedgers.entries()) {
+            if (ledger.subscriber == user) {
+                try {
+                    let balance = await BitcoinIntegration.getBalance(ledger.address);
+                    let updatedLedger: SubscriptionLedger = {
+                        ledger with
+                        lastSyncedBalance = balance;
+                        lastSyncedAt = Time.now();
+                    };
+                    subscriptionLedgers.put(subscriptionId, updatedLedger);
+                    total := safeAddNat64(total, availableBalance(updatedLedger));
+                } catch (_) {
+                    // Ignore sync errors for individual subscriptions
+                };
+            };
+        };
+
+        total
+    };
+
     public query func getBalance(user: Principal): async Nat64 {
-        switch (userBalances.get(user)) {
-            case (?balance) { balance };
-            case null { 0 : Nat64 };
-        }
-    };
-    
-    public func deposit(user: Principal, amount: Nat64): async Bool {
-        // Validate amount
-        switch (validateAmount(amount)) {
-            case (#err(_)) { return false };
-            case (#ok()) { };
+        var total: Nat64 = 0;
+
+        for ((_, ledger) in subscriptionLedgers.entries()) {
+            if (ledger.subscriber == user) {
+                total := safeAddNat64(total, availableBalance(ledger));
+            };
         };
-        
-        let currentBalance = switch (userBalances.get(user)) {
-            case (?balance) { balance };
-            case null { 0 : Nat64 };
-        };
-        
-        // Check for overflow
-        if (currentBalance > (18_446_744_073_709_551_615 : Nat64) - amount) {
-            return false; // Overflow protection
-        };
-        
-        userBalances.put(user, currentBalance + amount);
-        true
-    };
-    
-    public func withdraw(user: Principal, amount: Nat64): async Bool {
-        // Validate amount
-        switch (validateAmount(amount)) {
-            case (#err(_)) { return false };
-            case (#ok()) { };
-        };
-        
-        let currentBalance = switch (userBalances.get(user)) {
-            case (?balance) { balance };
-            case null { 0 : Nat64 };
-        };
-        
-        if (currentBalance >= amount) {
-            userBalances.put(user, currentBalance - amount);
-            true
-        } else {
-            false
-        }
-    };
-    
-    // Helper function to generate random string
-    private func generateRandomString(seed: Nat): Text {
-        let seedText = Nat.toText(seed);
-        seedText # "x" # Nat.toText(seed * 7 % 1000)
+
+        total
     };
 }

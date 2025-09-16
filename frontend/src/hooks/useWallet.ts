@@ -7,8 +7,6 @@ interface UseWalletReturn {
   balance: number;
   loading: boolean;
   error: string | null;
-  deposit: (amount: number) => Promise<boolean>;
-  withdraw: (amount: number) => Promise<boolean>;
   refetch: () => Promise<void>;
 }
 
@@ -23,41 +21,14 @@ export function useWallet(authClient: AuthClient | undefined): UseWalletReturn {
     try {
       setError(null);
       
-      const walletBalance = await walletService.getBalance(authClient);
-      // Only update if balance actually changed
-      if (walletBalance !== balance) {
-        setBalance(walletBalance);
+      const refreshedBalance = await walletService.refreshBalance(authClient);
+      if (refreshedBalance !== balance) {
+        setBalance(refreshedBalance);
       }
     } catch (err: any) {
       setError(err.message);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const deposit = async (amount: number): Promise<boolean> => {
-    try {
-      const result = await walletService.deposit(authClient!, amount);
-      if (result) {
-        await loadWallet();
-      }
-      return result;
-    } catch (err: any) {
-      setError(err.message);
-      return false;
-    }
-  };
-
-  const withdraw = async (amount: number): Promise<boolean> => {
-    try {
-      const result = await walletService.withdraw(authClient!, amount);
-      if (result) {
-        await loadWallet();
-      }
-      return result;
-    } catch (err: any) {
-      setError(err.message);
-      return false;
     }
   };
 
@@ -75,8 +46,6 @@ export function useWallet(authClient: AuthClient | undefined): UseWalletReturn {
     balance,
     loading,
     error,
-    deposit,
-    withdraw,
     refetch: loadWallet
   };
 }

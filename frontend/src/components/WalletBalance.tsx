@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useWallet } from '../hooks/useWallet';
 import { usePrice } from '../hooks/usePrice';
 import { Button } from './ui/Button';
-import { Modal } from './ui/Modal';
 import { AuthClient } from '@dfinity/auth-client';
 
 interface WalletBalanceProps {
@@ -11,23 +10,21 @@ interface WalletBalanceProps {
   showActions?: boolean;
 }
 
-export function WalletBalance({ 
-  authClient, 
-  variant = 'inline', 
-  showActions = false 
+export function WalletBalance({
+  authClient,
+  variant = 'inline',
+  showActions = false
 }: WalletBalanceProps): React.ReactElement {
-  const [isDepositModalOpen, setIsDepositModalOpen] = useState(false);
-  const [depositAmount, setDepositAmount] = useState('');
-  const { balance, loading, deposit } = useWallet(authClient);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const { balance, loading, refetch } = useWallet(authClient);
   const { convertSatsToUSD } = usePrice(authClient);
 
-  const handleDeposit = async (): Promise<void> => {
-    if (depositAmount && !isNaN(Number(depositAmount))) {
-      const success = await deposit(Number(depositAmount));
-      if (success) {
-        setDepositAmount('');
-        setIsDepositModalOpen(false);
-      }
+  const handleRefresh = async (): Promise<void> => {
+    setIsRefreshing(true);
+    try {
+      await refetch();
+    } finally {
+      setIsRefreshing(false);
     }
   };
 
@@ -61,42 +58,15 @@ export function WalletBalance({
         <span className="wallet-icon">₿</span>
         <span className="wallet-amount">{formatBalance()}</span>
         {showActions && (
-          <button 
+          <button
             className="wallet-add-btn"
-            onClick={() => setIsDepositModalOpen(true)}
-            title="Add funds"
+            onClick={handleRefresh}
+            title="Refresh balance"
+            disabled={isRefreshing}
           >
-            +
+            {isRefreshing ? '…' : '↻'}
           </button>
         )}
-        
-        <Modal 
-          isOpen={isDepositModalOpen} 
-          onClose={() => setIsDepositModalOpen(false)}
-          title="Add Funds"
-        >
-          <div className="deposit-modal">
-            <div className="form-field">
-              <label htmlFor="amount">Amount (sats)</label>
-              <input
-                id="amount"
-                type="number"
-                value={depositAmount}
-                onChange={(e) => setDepositAmount(e.target.value)}
-                placeholder="Enter amount in satoshis"
-                min="1"
-              />
-            </div>
-            <div className="modal-actions">
-              <Button variant="secondary" onClick={() => setIsDepositModalOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleDeposit} disabled={!depositAmount}>
-                Deposit
-              </Button>
-            </div>
-          </div>
-        </Modal>
       </div>
     );
   }
@@ -110,45 +80,18 @@ export function WalletBalance({
         </div>
         <div className="wallet-balance__amount-large">{formatBalance()}</div>
         <div className="wallet-balance__usd-large">{formatUSD()}</div>
-        
+
         {showActions && (
           <div className="wallet-balance__actions">
-            <Button onClick={() => setIsDepositModalOpen(true)} variant="primary">
-              Add Funds
+            <Button onClick={handleRefresh} variant="primary" disabled={isRefreshing}>
+              {isRefreshing ? 'Refreshing…' : 'Refresh Balance'}
             </Button>
           </div>
         )}
-        
-        <Modal 
-          isOpen={isDepositModalOpen} 
-          onClose={() => setIsDepositModalOpen(false)}
-          title="Add Funds to Wallet"
-        >
-          <div className="deposit-modal">
-            <div className="current-balance">
-              Current Balance: {formatBalance()} {formatUSD()}
-            </div>
-            <div className="form-field">
-              <label htmlFor="amount">Amount (sats)</label>
-              <input
-                id="amount"
-                type="number"
-                value={depositAmount}
-                onChange={(e) => setDepositAmount(e.target.value)}
-                placeholder="Enter amount in satoshis"
-                min="1"
-              />
-            </div>
-            <div className="modal-actions">
-              <Button variant="secondary" onClick={() => setIsDepositModalOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleDeposit} disabled={!depositAmount}>
-                Deposit
-              </Button>
-            </div>
-          </div>
-        </Modal>
+        <p className="wallet-balance__note">
+          Send BTC to the subscription addresses listed in your dashboard. Balances update
+          after mainnet confirmations and may take a few minutes to appear.
+        </p>
       </div>
     );
   }
@@ -159,45 +102,23 @@ export function WalletBalance({
       <span className="wallet-balance__label">Balance:</span>
       <span className="wallet-balance__amount">{formatBalance()}</span>
       <span className="wallet-balance__usd">{formatUSD()}</span>
-      
+
       {showActions && (
-        <Button 
-          size="sm" 
+        <Button
+          size="sm"
           variant="secondary"
-          onClick={() => setIsDepositModalOpen(true)}
+          onClick={handleRefresh}
           className="wallet-balance__action"
+          disabled={isRefreshing}
         >
-          Add Funds
+          {isRefreshing ? 'Refreshing…' : 'Refresh'}
         </Button>
       )}
-      
-      <Modal 
-        isOpen={isDepositModalOpen} 
-        onClose={() => setIsDepositModalOpen(false)}
-        title="Add Funds"
-      >
-        <div className="deposit-modal">
-          <div className="form-field">
-            <label htmlFor="amount">Amount (sats)</label>
-            <input
-              id="amount"
-              type="number"
-              value={depositAmount}
-              onChange={(e) => setDepositAmount(e.target.value)}
-              placeholder="Enter amount in satoshis"
-              min="1"
-            />
-          </div>
-          <div className="modal-actions">
-            <Button variant="secondary" onClick={() => setIsDepositModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleDeposit} disabled={!depositAmount}>
-              Deposit
-            </Button>
-          </div>
-        </div>
-      </Modal>
+
+      <p className="wallet-balance__note">
+        Funds reflect confirmed Bitcoin mainnet deposits. Use the subscription-specific
+        address to top up your balance.
+      </p>
     </div>
   );
 }
