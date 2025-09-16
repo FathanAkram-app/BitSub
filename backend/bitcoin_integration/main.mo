@@ -6,7 +6,7 @@ import Nat64 "mo:base/Nat64";
 import Array "mo:base/Array";
 import Result "mo:base/Result";
 import Principal "mo:base/Principal";
-import Bitcoin "mo:bitcoin";
+import Bitcoin "./Bitcoin";
 
 // Simple Bitcoin integration canister that connects to the
 // Internet Computer's Bitcoin API on mainnet. This canister
