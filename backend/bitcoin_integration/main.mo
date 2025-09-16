@@ -6,7 +6,7 @@ import Nat64 "mo:base/Nat64";
 import Array "mo:base/Array";
 import Result "mo:base/Result";
 import Principal "mo:base/Principal";
-import Bitcoin "mo:bitcoin";
+import Bitcoin "./Bitcoin";
 
 // Simple Bitcoin integration canister that connects to the
 // Internet Computer's Bitcoin API on mainnet. This canister
@@ -45,7 +45,7 @@ actor BitcoinIntegration {
     };
 
     // Interface for the management canister
-    let ic : actor {
+    transient let ic : actor {
         bitcoin_get_balance : GetBalanceRequest -> async GetBalanceResponse;
         bitcoin_send_transaction : SendTransactionRequest -> async ();
         ecdsa_public_key : EcdsaPublicKeyArgument -> async EcdsaPublicKeyResponse;
@@ -54,14 +54,15 @@ actor BitcoinIntegration {
     // Name of the ECDSA key to use. On a local replica this key is
     // automatically provisioned. On mainnet the key must be requested
     // via an NNS proposal.
-    let KEY_NAME : Text = "dfx_test_key";
+    stable let KEY_NAME : Text = "dfx_test_key";
 
     // Derive a new Bitcoin mainnet address for the given numeric id.
     // The id can represent a subscription or user and is used as the
     // derivation path component so each call yields a unique address.
     public func generateAddress(id : Nat) : async Text {
         let path : [Blob] = [Blob.fromArray(Array.reverse(Array.tabulate<Nat8>(8, func(i) {
-            Nat8.fromNat((id >> (i * 8)) & 0xff)
+            let shifted = id >> (i * 8);
+            Nat8.fromNat(Nat.rem(shifted, 256))
         })))];
 
         let key = await ic.ecdsa_public_key({
