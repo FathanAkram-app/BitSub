@@ -444,6 +444,18 @@ body {
   gap: 4px;
 }
 
+.wallet-actions {
+  display: flex;
+  align-items: center;
+}
+
+.wallet-helper {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #8892a4;
+  max-width: 420px;
+}
+
 .wallet-label {
   font-size: 0.85rem;
   color: #8892a4;
@@ -582,6 +594,31 @@ body {
   gap: 6px;
   align-items: center;
   font-size: 0.85rem;
+}
+
+.subscription-address {
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.subscription-address .address-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #8892a4;
+}
+
+.subscription-address .address-value {
+  background: #1a2332;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-family: 'Roboto Mono', monospace;
+  font-size: 0.8rem;
+  color: #ffffff;
+  word-break: break-all;
 }
 
 .subscription-details .amount {

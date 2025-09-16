@@ -159,11 +159,9 @@ export interface UseSubscriptionsReturn {
 }
 
 export interface UseWalletReturn {
-  balance: bigint;
+  balance: number;
   loading: boolean;
   error: string | null;
-  deposit: (amount: bigint) => Promise<boolean>;
-  withdraw: (amount: bigint) => Promise<boolean>;
   refetch: () => Promise<void>;
 }
 

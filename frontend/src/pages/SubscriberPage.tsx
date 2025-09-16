@@ -22,6 +22,21 @@ export default function SubscriberDashboard({ authClient, onSwitchToMarketplace 
   const { balance } = useWallet(authClient);
   const { convertSatsToUSD } = usePrice(authClient);
 
+  const copyAddress = async (address: string): Promise<void> => {
+    if (!address) return;
+    try {
+      if (navigator.clipboard) {
+        await navigator.clipboard.writeText(address);
+        alert('Deposit address copied to clipboard');
+      } else {
+        throw new Error('Clipboard API unavailable');
+      }
+    } catch (error) {
+      console.error('Failed to copy address', error);
+      alert('Copy failed. Please copy the address manually.');
+    }
+  };
+
   useEffect(() => {
     // Check URL for subscribe or popup parameter
     const urlParams = new URLSearchParams(window.location.search)
@@ -154,8 +169,19 @@ export default function SubscriberDashboard({ authClient, onSwitchToMarketplace 
                           <span className="interval">/ {getIntervalText(sub.planInterval).toLowerCase()}</span>
                           <span className="usd-amount">(${convertSatsToUSD(sub.planAmount)})</span>
                         </div>
+                        <div className="subscription-address">
+                          <span className="address-label">Deposit Address</span>
+                          <code className="address-value">{sub.btcAddress}</code>
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => copyAddress(sub.btcAddress)}
+                          >
+                            Copy
+                          </Button>
+                        </div>
                       </div>
-                      
+
                       <div className="subscription-status">
                         <div className={`status-indicator ${status.text.toLowerCase().replace(' ', '-')}`}>
                           <div className="status-dot"></div>

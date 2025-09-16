@@ -452,10 +452,22 @@ persistent actor SubscriptionManager {
                 
                 let subscriptionId = nextSubscriptionId;
                 nextSubscriptionId += 1;
-                
-                // Generate unique BTC address with subscriber-specific identifier
-                let subscriberHash = Nat32.toText(Principal.hash(msg.caller));
-                let btcAddress = "bc1q" # Nat.toText(subscriptionId) # subscriberHash;
+
+                let walletManagerId = getCanisterPrincipal("wallet_manager");
+                let walletManager = actor(Principal.toText(walletManagerId)) : actor {
+                    generateAddress: (Nat, Principal) -> async Result.Result<Text, Text>;
+                    syncSubscriptionBalance: (Nat) -> async Result.Result<Nat64, Text>;
+                };
+
+                let addressResult = await walletManager.generateAddress(subscriptionId, msg.caller);
+                let btcAddress = switch (addressResult) {
+                    case (#ok(address)) { address };
+                    case (#err(message)) {
+                        return #err(errorToText(#SystemError("Failed to create Bitcoin address: " # message)));
+                    };
+                };
+
+                let _ = await walletManager.syncSubscriptionBalance(subscriptionId);
                 
                 let subscription: ActiveSubscription = {
                     subscriptionId = subscriptionId;
@@ -488,14 +500,10 @@ persistent actor SubscriptionManager {
                 // Process initial payment if user has wallet balance (including platform fee)
                 let platformFee = calculatePlatformFee(plan.amount);
                 let totalAmount = plan.amount + platformFee;
-                let hasBalance = await checkUserBalance(msg.caller, totalAmount);
+                let hasBalance = await checkSubscriptionBalance(subscriptionId, totalAmount);
                 if (hasBalance) {
-                    let deducted = await deductFromWallet(msg.caller, totalAmount);
+                    let deducted = await deductFromSubscription(subscriptionId, totalAmount);
                     if (deducted) {
-                        // Transfer platform fee and creator payment
-                        ignore await transferPlatformFee(platformFee);
-                        ignore await transferToCreator(plan.creator, plan.amount);
-                        
                         // Update subscription with payment
                         let currentTime = Time.now();
                         let paidSubscription = {
@@ -515,7 +523,7 @@ persistent actor SubscriptionManager {
                             amount = plan.amount;
                             status = #Confirmed;
                             timestamp = currentTime;
-                            txHash = ?"initial_payment";
+                            txHash = ?"bitcoin_mainnet_initial_payment";
                         };
                         transactions.put(nextTransactionId, paymentTx);
                         nextTransactionId += 1;
@@ -1060,58 +1068,11 @@ persistent actor SubscriptionManager {
     
     // Platform fee configuration (2.5%)
     private transient let PLATFORM_FEE_RATE: Float = 0.025;
-    private transient let PLATFORM_WALLET: Principal = Principal.fromText("2vxsx-fae"); // Platform owner
     
     // Calculate platform fee
     private func calculatePlatformFee(amount: Nat): Nat {
         let fee = Float.fromInt(amount) * PLATFORM_FEE_RATE;
         Int.abs(Float.toInt(fee))
-    };
-    
-    // Enhanced inter-canister call with retries for Bool operations
-    private func callWithRetryBool(operation: () -> async Bool, maxRetries: Nat): async Bool {
-        var attempts = 0;
-        while (attempts <= maxRetries) {
-            try {
-                return await operation();
-            } catch (_) {
-                attempts += 1;
-                if (attempts > maxRetries) {
-                    return false;
-                };
-                // Simple exponential backoff simulation
-                let _ = await Random.blob();
-            };
-        };
-        false
-    };
-    
-    // Transfer platform fee
-    private func transferPlatformFee(amount: Nat): async Bool {
-        let walletManagerId = getCanisterPrincipal("wallet_manager");
-        let walletManager = actor(Principal.toText(walletManagerId)) : actor {
-            deposit: (Principal, Nat64) -> async Bool;
-        };
-        
-        let operation = func(): async Bool {
-            await walletManager.deposit(PLATFORM_WALLET, Nat64.fromNat(amount))
-        };
-        
-        await callWithRetryBool(operation, 2)
-    };
-    
-    // Transfer payment to creator
-    private func transferToCreator(creator: Principal, amount: Nat): async Bool {
-        let walletManagerId = getCanisterPrincipal("wallet_manager");
-        let walletManager = actor(Principal.toText(walletManagerId)) : actor {
-            deposit: (Principal, Nat64) -> async Bool;
-        };
-        
-        let operation = func(): async Bool {
-            await walletManager.deposit(creator, Nat64.fromNat(amount))
-        };
-        
-        await callWithRetryBool(operation, 2)
     };
     
     // Helper Functions
@@ -1136,18 +1097,14 @@ persistent actor SubscriptionManager {
                         // Check if user has sufficient wallet balance (including platform fee)
                         let platformFee = calculatePlatformFee(plan.amount);
                         let totalAmount = plan.amount + platformFee;
-                        let hasBalance = await checkUserBalance(sub.subscriber, totalAmount);
+                        let hasBalance = await checkSubscriptionBalance(subId, totalAmount);
                         if (hasBalance) {
                             // Deduct from wallet
-                            let deducted = await deductFromWallet(sub.subscriber, totalAmount);
+                            let deducted = await deductFromSubscription(subId, totalAmount);
                             if (deducted) {
-                                // Transfer platform fee and creator payment
-                                ignore await transferPlatformFee(platformFee);
-                                ignore await transferToCreator(plan.creator, plan.amount);
-                                
                                 // Update subscription
                                 let updatedSub = {
-                                    sub with 
+                                    sub with
                                     lastPayment = ?currentTime;
                                     nextPayment = currentTime + getIntervalNanos(plan.interval);
                                 };
@@ -1163,7 +1120,7 @@ persistent actor SubscriptionManager {
                                     amount = plan.amount;
                                     status = #Confirmed;
                                     timestamp = currentTime;
-                                    txHash = ?"auto_payment";
+                                    txHash = ?"bitcoin_mainnet_auto_payment";
                                 };
                                 transactions.put(nextTransactionId, transaction);
                                 nextTransactionId += 1;
@@ -1204,32 +1161,36 @@ persistent actor SubscriptionManager {
         paymentsProcessed
     };
     
-    // Check if user has sufficient wallet balance
-    private func checkUserBalance(user: Principal, amount: Nat): async Bool {
+    // Check if a subscription address has sufficient confirmed Bitcoin balance
+    private func checkSubscriptionBalance(subscriptionId: Nat, amount: Nat): async Bool {
         let walletManagerId = getCanisterPrincipal("wallet_manager");
         let walletManager = actor(Principal.toText(walletManagerId)) : actor {
-            getBalance: (Principal) -> async Nat64;
+            syncSubscriptionBalance: (Nat) -> async Result.Result<Nat64, Text>;
+            getAvailableBalance: (Nat) -> async ?Nat64;
         };
-        
-        try {
-            let balance = await walletManager.getBalance(user);
-            Nat64.toNat(balance) >= amount
-        } catch (_) {
-            false
+
+        let _ = await walletManager.syncSubscriptionBalance(subscriptionId);
+
+        switch (await walletManager.getAvailableBalance(subscriptionId)) {
+            case (?available) { Nat64.toNat(available) >= amount };
+            case null { false };
         }
     };
-    
-    // Deduct amount from user wallet
-    private func deductFromWallet(user: Principal, amount: Nat): async Bool {
+
+    // Deduct amount from the subscription ledger once funds are confirmed on-chain
+    private func deductFromSubscription(subscriptionId: Nat, amount: Nat): async Bool {
+        if (amount > 18_446_744_073_709_551_615) {
+            return false;
+        };
+
         let walletManagerId = getCanisterPrincipal("wallet_manager");
         let walletManager = actor(Principal.toText(walletManagerId)) : actor {
-            withdraw: (Principal, Nat64) -> async Bool;
+            consumeBalance: (Nat, Nat64) -> async Result.Result<(), Text>;
         };
-        
-        try {
-            await walletManager.withdraw(user, Nat64.fromNat(amount))
-        } catch (_) {
-            false
+
+        switch (await walletManager.consumeBalance(subscriptionId, Nat64.fromNat(amount))) {
+            case (#ok(())) { true };
+            case (#err(_)) { false };
         }
     };
     
@@ -1466,15 +1427,11 @@ persistent actor SubscriptionManager {
                         // Check if user has sufficient wallet balance (including platform fee)
                         let platformFee = calculatePlatformFee(plan.amount);
                         let totalAmount = plan.amount + platformFee;
-                        let hasBalance = await checkUserBalance(msg.caller, totalAmount);
+                        let hasBalance = await checkSubscriptionBalance(subscriptionId, totalAmount);
                         if (hasBalance) {
                             // Deduct from wallet
-                            let deducted = await deductFromWallet(msg.caller, totalAmount);
+                            let deducted = await deductFromSubscription(subscriptionId, totalAmount);
                             if (deducted) {
-                                // Transfer platform fee and creator payment
-                                ignore await transferPlatformFee(platformFee);
-                                ignore await transferToCreator(plan.creator, plan.amount);
-                                
                                 // Update subscription with payment
                                 let currentTime = Time.now();
                                 let paidSubscription = {
@@ -1494,7 +1451,7 @@ persistent actor SubscriptionManager {
                                     amount = plan.amount;
                                     status = #Confirmed;
                                     timestamp = currentTime;
-                                    txHash = ?"manual_retry";
+                                    txHash = ?"bitcoin_mainnet_manual_retry";
                                 };
                                 transactions.put(nextTransactionId, paymentTx);
                                 nextTransactionId += 1;
