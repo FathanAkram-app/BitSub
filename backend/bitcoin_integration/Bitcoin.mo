@@ -474,8 +474,12 @@ module {
     };
 
     module Bech32 {
-        let charsetText : Text = "qpzry9x8gf2tvdw0s3jn54khce6mua7l";
-        let charset : [Char] = Iter.toArray(charsetText.chars());
+        let charset : [Char] = [
+            'q', 'p', 'z', 'r', 'y', '9', 'x', '8',
+            'g', 'f', '2', 't', 'v', 'd', 'w', '0',
+            's', '3', 'j', 'n', '5', '4', 'k', 'h',
+            'c', 'e', '6', 'm', 'u', 'a', '7', 'l',
+        ];
         let generator : [Nat] = [
             0x3b6a57b2,
             0x26508e6d,

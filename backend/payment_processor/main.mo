@@ -1,5 +1,3 @@
-import Principal "mo:base/Principal";
-import Time "mo:base/Time";
 import Timer "mo:base/Timer";
 import Debug "mo:base/Debug";
 import Nat "mo:base/Nat";
