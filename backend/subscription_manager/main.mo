@@ -159,20 +159,20 @@ persistent actor SubscriptionManager {
     };
     
     // Stable Storage
-    private stable var nextPlanId: Nat = 0;
-    private stable var nextSubscriptionId: Nat = 0;
-    private stable var nextTransactionId: Nat = 0;
-    private stable var nextWebhookEventId: Nat = 0;
-    
+    private var nextPlanId: Nat = 0;
+    private var nextSubscriptionId: Nat = 0;
+    private var nextTransactionId: Nat = 0;
+    private var nextWebhookEventId: Nat = 0;
+
     // Stable arrays for upgrade persistence
-    private stable var plansEntries: [(Text, SubscriptionPlan)] = [];
-    private stable var subscriptionsEntries: [(Nat, ActiveSubscription)] = [];
-    private stable var creatorPlansEntries: [(Principal, [Text])] = [];
-    private stable var userSubscriptionsEntries: [(Principal, [Nat])] = [];
-    private stable var transactionsEntries: [(Nat, Transaction)] = [];
-    private stable var canisterRegistryEntries: [(Text, Principal)] = [];
-    private stable var webhookEventsEntries: [(Nat, WebhookEvent)] = [];
-    private stable var webhookConfigsEntries: [(Text, WebhookConfig)] = [];
+    private var plansEntries: [(Text, SubscriptionPlan)] = [];
+    private var subscriptionsEntries: [(Nat, ActiveSubscription)] = [];
+    private var creatorPlansEntries: [(Principal, [Text])] = [];
+    private var userSubscriptionsEntries: [(Principal, [Nat])] = [];
+    private var transactionsEntries: [(Nat, Transaction)] = [];
+    private var canisterRegistryEntries: [(Text, Principal)] = [];
+    private var webhookEventsEntries: [(Nat, WebhookEvent)] = [];
+    private var webhookConfigsEntries: [(Text, WebhookConfig)] = [];
     
     // Working hashmaps (rebuilt from stable storage)
     private transient var plans = HashMap.HashMap<Text, SubscriptionPlan>(10, Text.equal, Text.hash);

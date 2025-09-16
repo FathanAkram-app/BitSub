@@ -39,14 +39,14 @@ module {
     };
 
     func convertBits(data : [Nat8], fromBits : Nat, toBits : Nat, pad : Bool) : [Nat8] {
-        var acc : Nat = 0;
+        var acc : Nat64 = 0;
         var bits : Nat = 0;
-        let maxv : Nat = (1 << toBits) - 1;
-        let maxInput : Nat = 1 << fromBits;
+        let maxv : Nat64 = ((1 : Nat64) << toBits) - 1;
+        let maxInput : Nat64 = (1 : Nat64) << fromBits;
         let result = Buffer.Buffer<Nat8>(data.size() * fromBits / toBits + 1);
 
         for (value in data.vals()) {
-            let v = Nat8.toNat(value);
+            let v = Nat64.fromNat(Nat8.toNat(value));
             assert (v < maxInput);
             acc := (acc << fromBits) | v;
             bits += fromBits;
@@ -54,14 +54,14 @@ module {
             while (bits >= toBits) {
                 bits -= toBits;
                 let out = (acc >> bits) & maxv;
-                result.add(Nat8.fromNat(out));
+                result.add(Nat8.fromNat(Nat64.toNat(out)));
             };
         };
 
         if (pad) {
             if (bits > 0) {
                 let out = (acc << (toBits - bits)) & maxv;
-                result.add(Nat8.fromNat(out));
+                result.add(Nat8.fromNat(Nat64.toNat(out)));
             };
         } else {
             assert (bits < fromBits);
@@ -144,11 +144,11 @@ module {
 
         func toNat32(data : [Nat8], offset : Nat) : Nat32 {
             let base = offset * 4;
-            let b0 = Nat8.toNat(data[base]);
-            let b1 = Nat8.toNat(data[base + 1]);
-            let b2 = Nat8.toNat(data[base + 2]);
-            let b3 = Nat8.toNat(data[base + 3]);
-            Nat32.fromNat((b0 << 24) | (b1 << 16) | (b2 << 8) | b3);
+            let b0 = Nat32.fromNat(Nat8.toNat(data[base]));
+            let b1 = Nat32.fromNat(Nat8.toNat(data[base + 1]));
+            let b2 = Nat32.fromNat(Nat8.toNat(data[base + 2]));
+            let b3 = Nat32.fromNat(Nat8.toNat(data[base + 3]));
+            (b0 << 24) | (b1 << 16) | (b2 << 8) | b3;
         };
 
         func byteAt(value : Nat32, index : Nat) : Nat8 {
@@ -164,11 +164,11 @@ module {
 
         public func hash(data : [Nat8]) : [Nat8] {
             let padded = pad(data);
-            var h = Array.tabulate<Nat32>(initial.size(), func(i : Nat) : Nat32 { initial[i] });
+            let h = Array.thaw<Nat32>(initial);
 
             var offset : Nat = 0;
             while (offset < padded.size()) {
-                var w = Array.init<Nat32>(64, 0 : Nat32);
+                let w = Array.init<Nat32>(64, 0 : Nat32);
                 let chunkIndex = offset / 4;
                 var i : Nat = 0;
                 while (i < 16) {
@@ -383,11 +383,11 @@ module {
 
         func toNat32(data : [Nat8], offset : Nat) : Nat32 {
             let base = offset * 4;
-            let b0 = Nat8.toNat(data[base]);
-            let b1 = Nat8.toNat(data[base + 1]);
-            let b2 = Nat8.toNat(data[base + 2]);
-            let b3 = Nat8.toNat(data[base + 3]);
-            Nat32.fromNat(b0 | (b1 << 8) | (b2 << 16) | (b3 << 24));
+            let b0 = Nat32.fromNat(Nat8.toNat(data[base]));
+            let b1 = Nat32.fromNat(Nat8.toNat(data[base + 1]));
+            let b2 = Nat32.fromNat(Nat8.toNat(data[base + 2]));
+            let b3 = Nat32.fromNat(Nat8.toNat(data[base + 3]));
+            b0 | (b1 << 8) | (b2 << 16) | (b3 << 24);
         };
 
         func toBytes(value : Nat32) : [Nat8] {
@@ -402,7 +402,7 @@ module {
 
         public func hash(data : [Nat8]) : [Nat8] {
             let padded = pad(data);
-            var h = Array.tabulate<Nat32>(initial.size(), func(i : Nat) : Nat32 { initial[i] });
+            let h = Array.thaw<Nat32>(initial);
 
             var offset : Nat = 0;
             while (offset < padded.size()) {
@@ -480,37 +480,37 @@ module {
             's', '3', 'j', 'n', '5', '4', 'k', 'h',
             'c', 'e', '6', 'm', 'u', 'a', '7', 'l',
         ];
-        let generator : [Nat] = [
-            0x3b6a57b2,
-            0x26508e6d,
-            0x1ea119fa,
-            0x3d4233dd,
-            0x2a1462b3,
+        let generator : [Nat64] = [
+            0x3b6a57b2 : Nat64,
+            0x26508e6d : Nat64,
+            0x1ea119fa : Nat64,
+            0x3d4233dd : Nat64,
+            0x2a1462b3 : Nat64,
         ];
 
         func hrpExpand(hrp : Text) : [Nat8] {
             let chars = Iter.toArray(hrp.chars());
             let buf = Buffer.Buffer<Nat8>(chars.size() * 2 + 1);
             for (c in chars.vals()) {
-                let code = Nat32.toNat(Char.toNat32(c));
-                buf.add(Nat8.fromNat(code >> 5));
+                let code = Char.toNat32(c);
+                buf.add(Nat8.fromNat(Nat32.toNat(code >> 5)));
             };
             buf.add(0 : Nat8);
             for (c in chars.vals()) {
-                let code = Nat32.toNat(Char.toNat32(c));
-                buf.add(Nat8.fromNat(code & 31));
+                let code = Char.toNat32(c);
+                buf.add(Nat8.fromNat(Nat32.toNat(code & (0x1f : Nat32))));
             };
             Buffer.toArray(buf);
         };
 
-        func polymod(values : [Nat8]) : Nat {
-            var chk : Nat = 1;
+        func polymod(values : [Nat8]) : Nat64 {
+            var chk : Nat64 = 1;
             for (v in values.vals()) {
-                let top = chk >> 25;
-                chk := ((chk & 0x1ffffff) << 5) ^ Nat8.toNat(v);
+                let top : Nat64 = chk >> 25;
+                chk := ((chk & 0x1ff_ffff : Nat64) << 5) ^ Nat64.fromNat(Nat8.toNat(v));
                 var i : Nat = 0;
                 while (i < generator.size()) {
-                    if (((top >> i) & 1) == 1) {
+                    if (((top >> i) & (1 : Nat64)) == (1 : Nat64)) {
                         chk ^= generator[i];
                     };
                     i += 1;
@@ -520,12 +520,12 @@ module {
         };
 
         func createChecksum(hrp : Text, data : [Nat8]) : [Nat8] {
-            let zeros : [Nat8] = Array.tabulate<Nat8>(6, func(_ : Nat) : Nat8 { 0 });
+            let zeros : [Nat8] = Array.tabulate<Nat8>(6, func(_ : Nat) : Nat8 { 0 : Nat8 });
             let values = Array.append<Nat8>(hrpExpand(hrp), Array.append<Nat8>(data, zeros));
-            let pm = polymod(values) ^ 1;
+            let pm : Nat64 = polymod(values) ^ (1 : Nat64);
             Array.tabulate<Nat8>(6, func(i : Nat) : Nat8 {
                 let shift = 5 * (5 - i);
-                Nat8.fromNat((pm >> shift) & 31);
+                Nat8.fromNat(Nat64.toNat((pm >> shift) & (0x1f : Nat64)));
             });
         };
 
